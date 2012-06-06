@@ -167,8 +167,8 @@ Configure the logs
 		3 : Apache SSL Access Log;
 		4 : Apache SSL Error Log;
 		5 : Varnish NCSA Log (you must prefix the log format with: "%h %V");
-		6 : PHP error log;
-		7 : FTP log;
+		6 : FTP log;
+		7 : PHP error log;
 	 - the cluster number;
 	 - the client (local) IP address;
 	 - the client (local) hostname.
