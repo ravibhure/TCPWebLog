@@ -1,0 +1,135 @@
+TCPWebLog-Client - README
+================================================================================
+
+Name: TCPWebLog-Client
+
+Version: 1.0.0
+
+Release date: 2012-06-06
+
+Author: Nicola Asuni (nicola@fubra.com)
+
+Copyright (2012-2012):
+	Fubra Limited
+	Manor Coach House
+	Church Hill
+	Aldershot
+	Hampshire
+	GU12 4RQ
+	UK
+	http://www.fubra.com
+	support@fubra.com
+
+URL: https://github.com/fubralimited/TCPWebLog
+
+
+SOFTWARE LICENSE (AGPLv3):
+--------------------------
+
+This program is free software: you can redistribute it and/or modify it under
+the terms of the GNU Affero General Public License as published by the Free
+Software Foundation, either version 3 of the License, or (at your option) any
+later version.
+
+This program is distributed in the hope that it will be useful, but WITHOUT ANY
+WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A
+PARTICULAR PURPOSE.  See the GNU Affero General Public License for more details.
+
+You should have received a copy of the GNU Affero General Public License along
+with this program.  If not, see <http://www.gnu.org/licenses/>.
+
+See LICENSE.TXT file for more information.
+
+
+DESCRIPTION:
+------------
+
+TCPWebLog-Client program accepts a log text input and sends each line to a
+remote server via TCP connection.
+
+This folder contains the source code of TCPWebLog-Client:
+
+* makefile
+
+	This is the makefile to create and install executable binaries.
+
+* README
+
+	This is the file you are currently reading.
+
+* tcpweblog_client.8
+
+	Manpage for TCPWebLog-Client.
+
+* tcpweblog_client.spec
+
+	SPEC file for RPM packaging.
+
+* tcpweblog_client.c
+
+	This program is compiled as tcpweblog_client.bin. It accept a text input
+	and sends each line to a remote server via TCP.
+	NOTES:
+		The maximum input line length is 65000 bytes.
+		If using SELinux, run the following command to allow apache daemon to open network connections:
+			setsebool -P httpd_can_network_connect=1
+
+	Examples:
+
+		APACHE
+			CustomLog "| /usr/bin/tcpweblog_client.bin 10.0.3.15 9940 /var/log/tcpweblog_cache.log 1 1 10.0.2.15 xhost" combined
+			ErrorLog "| /usr/bin/tcpweblog_client.bin 10.0.3.15 9940 /var/log/tcpweblog_cache.log 2 1 10.0.2.15 xhost"
+
+		APACHE SSL
+			CustomLog "| /usr/bin/tcpweblog_client.bin 10.0.3.15 9940 /var/log/tcpweblog_cache.log 3 1 10.0.2.15 xhost" combined
+			ErrorLog "| /usr/bin/tcpweblog_client.bin 10.0.3.15 9940 /var/log/tcpweblog_cache.log 4 1 10.0.2.15 xhost"
+
+		VARNISHNCSA
+			You must prefix the log format with "%h %V", for example:
+			varnishncsa -F "%h %V %{X-Forwarded-For}i %l %u %t \"%r\" %>s %b \"%{Referer}i\" \"%{User-Agent}i\"" | /usr/bin/tcpweblog_client.bin 10.0.3.15 9940 /var/log/tcpweblog_cache.log 5 1 - -
+
+	The arguments of tcpweblog_client.bin are:
+
+	 - the IP address of the listening remote log server;
+	 - the TCP	port of the listening remote log server;
+	 - the local cache file to temporarily store the logs when the TCP
+	   connection is not available;
+	 - the log type:
+		1 : Apache Access Log;
+		2 : Apache Error Log;
+		3 : Apache SSL Access Log;
+		4 : Apache SSL Error Log;
+		5 : Varnish NCSA Log (you must prefix the log format with: "%h %V");
+		6 : FTP log;
+		7 : PHP error log;
+	 - the cluster number;
+	 - the client (local) IP address;
+	 - the client (local) hostname.
+
+
+REQUIRED PACKAGES TO COMPILE THE SOURCES:
+-----------------------------------------
+
+	The following packages are required to compile the sources:
+
+		* install general development packages for C:
+
+			yum groupinstall 'Development Tools'
+			yum install elfutils-devel
+
+COMPILE AND INSTALL
+-------------------
+
+	Once the required packages are installed, copy/extract the files in this
+	folder to a folder in your home directory and cd into it.
+
+	Now execute the following commands to compile and install:
+
+		make
+		make install
+
+	To uninstall execute:
+
+		make uninstall
+
+================================================================================

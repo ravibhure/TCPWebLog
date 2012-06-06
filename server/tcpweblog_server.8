@@ -1,0 +1,42 @@
+.\" Manpage for TCPWebLog-Server.
+.TH tcpweblog_server 8 "2012-06-06"
+.SH NAME
+tcpweblog_server \- TCPWebLog-Server control interface
+.SH SYNOPSIS
+tcpweblog_server is a SysV init script that takes one-word commands, defined below:
+.PP
+.B tcpweblog_server
+.I command
+.PP
+.SH DESCRIPTION
+.B tcpweblog_server
+is a front end to the TCPWebLog-Server program.
+The TCPWebLog-Server program listen on a specified TCP port for incoming data sent by remote TCPWebLog-Client programs.
+The received data is stored on local filesystem
+.PP
+.B NOTE:
+The configuration file is located at
+.B /etc/tcpweblog_server.conf
+.PP
+.SH OPTIONS
+The \fIcommand\fP can be any one of the following options:
+.TP 14
+.BI start
+Start TCPWebLog-Server (tcpweblog_server.bin)
+.TP
+.BI stop
+Stops TCPWebLog-Server
+.TP
+.BI restart
+Restarts TCPWebLog-Server
+If the program is not running, it is started
+.BI status
+Displays a brief status report
+.BI help
+Displays a short help message
+.SH AUTHOR
+Nicola Asuni (nicola@fubra.com)
+.SH COPYRIGHT
+(c) 2012-2012 Fubra Limited
+Manor Coach House, Church Hill, Aldershot, Hampshire, GU12 4RQ, UK (http://www.fubra.com - support@fubra.com)
+.

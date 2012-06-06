@@ -1,0 +1,57 @@
+.\" Manpage for TCPWebLog-Client.
+.TH tcpweblog_client.bin 8 "2012-06-01"
+.SH NAME
+tcpweblog_client.bin \- TCPWebLog-Client
+.SH SYNOPSIS
+tcpweblog_client.bin accepts a text input and sends each line to a remote server via TCP
+You must provide two parameters as defined below.
+.PP
+.B tcpweblog_client.bin
+.I parameters
+.PP
+.SH DESCRIPTION
+.B tcpweblog_client
+This program accept accepts a text input and sends each line to a remote server via TCP.
+If using SELinux, run the following command to allow apache daemon to open network connections:
+setsebool -P httpd_can_network_connect=1
+.PP
+.B NOTE
+The maximum input line length is 65000 bytes.
+.PP
+.SH PARAMETERS
+.TP 14
+.BI IP
+Remote log server IP port (surrounded by double quotes)
+.TP
+.BI PORT
+Remote log server port (usually 9940)
+.TP
+.BI CACHE_FILE
+Local cache file used to temporarily store data when the TCP connection is not available
+TP
+.BI LOG_TYPE
+The log type:
+1 : Apache Access Log;
+2 : Apache Error Log;
+3 : Apache SSL Access Log;
+4 : Apache SSL Error Log;
+5 : Varnish NCSA Log (you must prefix the log format with: "%h %V");
+6 : FTP log;
+7 : PHP log;
+TP
+.BI CLUSTER_NUMBER
+The cluster number
+TP
+.BI CLIENT_IP
+The client (local) IP address
+TP
+.BI CLIENT_HOSTNAME
+The client (local) hostname
+.SH EXAMPLE
+tcpweblog_client.bin "127.0.0.1" 9940 1 "V" "/var/log/tcpweblog_cache.log"
+.SH AUTHOR
+Nicola Asuni (nicola@fubra.com)
+.SH COPYRIGHT
+(c) 2012-2012 Fubra Limited
+Manor Coach House, Church Hill, Aldershot, Hampshire, GU12 4RQ, UK (http://www.fubra.com - support@fubra.com)
+.

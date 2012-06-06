@@ -1,0 +1,136 @@
+TCPWebLog-Server - README
+================================================================================
+
+Name: TCPWebLog-Server
+
+Version: 1.0.0
+
+Release date: 2012-06-06
+
+Author: Nicola Asuni (nicola@fubra.com)
+
+Copyright (2012-2012):
+	Fubra Limited
+	Manor Coach House
+	Church Hill
+	Aldershot
+	Hampshire
+	GU12 4RQ
+	UK
+	http://www.fubra.com
+	support@fubra.com
+
+URL: https://github.com/fubralimited/TCPWebLog
+
+
+SOFTWARE LICENSE (AGPLv3):
+--------------------------
+
+This program is free software: you can redistribute it and/or modify it under
+the terms of the GNU Affero General Public License as published by the Free
+Software Foundation, either version 3 of the License, or (at your option) any
+later version.
+
+This program is distributed in the hope that it will be useful, but WITHOUT ANY
+WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A
+PARTICULAR PURPOSE.  See the GNU Affero General Public License for more details.
+
+You should have received a copy of the GNU Affero General Public License along
+with this program.  If not, see <http://www.gnu.org/licenses/>.
+
+See LICENSE.TXT file for more information.
+
+
+DESCRIPTION:
+------------
+
+The TCPWebLog-Server is a program to collect and process log data sent by
+TCPWebLog-Client instances on remote computers.
+
+The TCPWebLog-Server program listen on a TCP port for incoming log data and
+split them on the local filesystem.
+
+This folder contains the source code of TCPWebLog-Server:
+
+* LICENSE
+
+	License file.
+
+* makefile
+
+	This is the makefile to create and install executable binaries.
+
+* README
+
+	This is the file you are currently reading.
+
+* tcpweblog_server
+
+	SysV Init script to execute TCPWebLog-Server.
+
+* tcpweblog_server.8
+
+	Manpage for TCPWebLog-Server.
+
+* tcpweblog_server.conf
+
+	Configuration file.
+
+* tcpweblog_server.spec
+
+	SPEC file for RPM packaging.
+
+* tcpweblog_server.c
+
+	This program is compiled as tcpweblog_server.bin.
+	This program listen on specified IP:PORT for incoming TCP connections
+	(from TCPWebLog-Client) and store the data on the local filesystem.
+
+
+REQUIRED PACKAGES TO COMPILE THE SOURCES:
+-----------------------------------------
+
+	The following packages are required to compile the sources:
+
+		* install general development packages for C
+
+	### Instructions for CentOS and Scientific Linux:
+
+	yum groupinstall 'Development Tools'
+	yum install elfutils-devel
+
+
+COMPILE AND INSTALL
+-------------------
+
+	Once the required packages are installed, copy/extract the files in this
+	folder to a folder in your home directory and cd into it.
+
+	Now execute the following commands to compile and install:
+
+		make
+		make install
+
+	To uninstall execute:
+
+		make uninstall
+
+
+CONFIGURE
+---------
+
+	To configure TCPWebLog-Server edit the /etc/tcpweblog_server.conf
+	configuration file.
+
+
+RUN
+---
+
+	To start this program you can use the SysV init script:
+
+	/etc/init.d/tcpweblog_server
+
+	To startup the service at boot you can use the chkconfig or update-rc.d
+	command (depending by OS type).
+
+================================================================================
