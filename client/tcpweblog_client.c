@@ -3,7 +3,7 @@
 // File name   : tcpweblog_client.c
 // Begin       : 2012-02-28
 // Last Update : 2012-06-06
-// Version     : 1.0.1
+// Version     : 1.0.2
 //
 // Website     : https://github.com/fubralimited/TCPWebLog
 //
@@ -120,6 +120,9 @@ int main(int argc, char *argv[]) {
 	// socket
 	int s;
 
+	// option for SOL_SOCKET
+	int optval = 1;
+
 	// decode arguments
 	if (argc != 8) {
 		perror("This program accept log text lines as input and sends them via TCP to the specified IP:PORT.\nYou must provide 7 arguments:\n - remote_ip_address: the IP address of the listening remote log server;\n - remote_port: the TCP	port of the listening remote log server;\n - local_cache_file: the local cache file to temporarily store the logs when the TCP connection is not available;\n - log_type: the log type:\n  1 : Apache Access Log;\n  2 : Apache Error Log;\n  3 : Apache SSL Access Log;\n  4 : Apache SSL Error Log;\n  5 : Varnish NCSA Log (you must prefix the log format with: \"%h %V\");\n  6 : PHP log;\n  7 : FTP log;\n - cluster_number: the cluster number;\n - client_ip: the client (local) IP address;\n - client_hostname: the client (local) hostname.\n\nEXAMPLES:\n\n \tAPACHE\n\t\tCustomLog \"| /usr/bin/tcpweblog_client.bin 10.0.3.15 9940 /var/log/tcpweblog_cache.log 1 1 10.0.2.15 xhost\" combined\n\t\tErrorLog \"| /usr/bin/tcpweblog_client.bin 10.0.3.15 9940 /var/log/tcpweblog_cache.log 2 1 10.0.2.15 xhost\"\n\n\tAPACHE SSL\n\t\tCustomLog \"| /usr/bin/tcpweblog_client.bin 10.0.3.15 9940 /var/log/tcpweblog_cache.log 3 1 10.0.2.15 xhost\" combined\n\t\tErrorLog \"| /usr/bin/tcpweblog_client.bin 10.0.3.15 9940 /var/log/tcpweblog_cache.log 4 1 10.0.2.15 xhost\"\n\n\tVARNISHNCSA\n\t\tYou must prefix the log format with \"%h %V\", for example:\n\t\tvarnishncsa -F \"%h %V %{X-Forwarded-For}i %l %u %t \\\"%r\\\" %>s %b \\\"%{Referer}i\\\" \\\"%{User-Agent}i\\\"\" | /usr/bin/tcpweblog_client.bin 10.0.3.15 9940 /var/log/tcpweblog_cache.log 5 1 - -\n\n\tIf using SELinux, run the following command to allow the Apache daemon to open network connections:\n\t\tsetsebool -P httpd_can_network_connect=1");
@@ -195,7 +198,7 @@ int main(int argc, char *argv[]) {
 
 		// read one line at time from stdin
 		if (scanf("%65000[^\n]s", &rawbuf)) {
-			
+
 			if (strlen(rawbuf) > 2) {
 
 				// try to open a TCP connection if not already open
@@ -207,6 +210,10 @@ int main(int argc, char *argv[]) {
 						// print an error message
 						perror("TCPWebLog-Client (socket)");
 					} else {
+						// set SO_REUSEADDR on socket to true (1):
+						if (setsockopt(s, SOL_SOCKET, SO_REUSEADDR, &optval, sizeof(optval)) == -1) {
+							perror("ServerUsage-Server (setsockopt)");
+						}
 						// establish a connection to the server
 						if (connect(s, &si_server, slen) == -1) {
 							close(s);

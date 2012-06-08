@@ -2,8 +2,8 @@
 //=============================================================================+
 // File name   : tcpweblog_server.c
 // Begin       : 2012-02-14
-// Last Update : 2012-06-06
-// Version     : 1.0.1
+// Last Update : 2012-06-08
+// Version     : 1.0.2
 //
 // Website     : https://github.com/fubralimited/TCPWebLog
 //
@@ -385,6 +385,9 @@ int main(int argc, char *argv[]) {
 	// new socket
 	int ns = -1;
 
+	// option for SOL_SOCKET
+	int optval = 1;
+
 	// thread number
 	int tn = 0;
 
@@ -412,6 +415,11 @@ int main(int argc, char *argv[]) {
 	// SOCK_STREAM Provides sequenced, reliable, two-way, connection-based byte streams.
 	if ((s = socket(AF_INET, SOCK_STREAM, 0)) == -1) {
 		diep("TCPWebLog-Server (socket)");
+	}
+
+	// set SO_REUSEADDR on socket to true (1):
+	if (setsockopt(s, SOL_SOCKET, SO_REUSEADDR, &optval, sizeof(optval)) == -1) {
+		diep("ServerUsage-Server (setsockopt)");
 	}
 
 	// initialize the si_server structure filling it with binary zeros

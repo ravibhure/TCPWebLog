@@ -1,3 +1,6 @@
+1.0.2 (2012-06-08)
+	- TCP sender and receiver are now able to reuse previously unclosed connections.
+
 1.0.1 (2012-06-07)
 	- Empty lines are now skipped.
 
