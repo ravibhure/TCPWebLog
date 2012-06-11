@@ -2,8 +2,8 @@
 //=============================================================================+
 // File name   : tcpweblog_client.c
 // Begin       : 2012-02-28
-// Last Update : 2012-06-06
-// Version     : 1.0.2
+// Last Update : 2012-06-11
+// Version     : 1.0.3
 //
 // Website     : https://github.com/fubralimited/TCPWebLog
 //
@@ -154,7 +154,10 @@ int main(int argc, char *argv[]) {
 
 
 	// buffer used to read input data
-	char rawbuf[BUFLEN];
+	char *rawbuf = NULL;
+
+	// length of the raw buffer
+	size_t rblen = 0;
 
 	// buffer used for a single log line
 	char buf[BUFLEN];
@@ -187,7 +190,6 @@ int main(int argc, char *argv[]) {
 	si_server.sin_port = htons(port);
 
 	// initialize buffers
-	memset(rawbuf, 0, BUFLEN);
 	memset(buf, 0, BUFLEN);
 
 	// initialize socket
@@ -197,112 +199,107 @@ int main(int argc, char *argv[]) {
 	while (1) {
 
 		// read one line at time from stdin
-		if (scanf("%65000[^\n]s", &rawbuf)) {
+		while (getline(&rawbuf, &rblen, stdin) != -1) {
 
-			if (strlen(rawbuf) > 2) {
-
-				// try to open a TCP connection if not already open
-				if (s <= 0) {
-					// start of block of data : create a network socket.
-					// AF_INET says that it will be an Internet socket.
-					// SOCK_STREAM Provides sequenced, reliable, two-way, connection-based byte streams.
-					if ((s = socket(AF_INET, SOCK_STREAM, 0)) == -1) {
-						// print an error message
-						perror("TCPWebLog-Client (socket)");
-					} else {
-						// set SO_REUSEADDR on socket to true (1):
-						if (setsockopt(s, SOL_SOCKET, SO_REUSEADDR, &optval, sizeof(optval)) == -1) {
-							perror("ServerUsage-Server (setsockopt)");
-						}
-						// establish a connection to the server
-						if (connect(s, &si_server, slen) == -1) {
-							close(s);
-							s = -1;
-							// print an error message
-							perror("TCPWebLog-Client (connect)");
-						}
+			// try to open a TCP connection if not already open
+			if (s <= 0) {
+				// start of block of data : create a network socket.
+				// AF_INET says that it will be an Internet socket.
+				// SOCK_STREAM Provides sequenced, reliable, two-way, connection-based byte streams.
+				if ((s = socket(AF_INET, SOCK_STREAM, 0)) == -1) {
+					// print an error message
+					perror("TCPWebLog-Client (socket)");
+				} else {
+					// set SO_REUSEADDR on socket to true (1):
+					if (setsockopt(s, SOL_SOCKET, SO_REUSEADDR, &optval, sizeof(optval)) == -1) {
+						perror("ServerUsage-Server (setsockopt)");
 					}
-				}
-
-				// add a prefix, source info and newline character to the log line
-				sprintf(buf, "@@%d\t%d\t%s\t%s\t%s\n", logtype, cluster, clientip, clienthost, rawbuf);
-
-				if (s > 0) {
-
-					// send line
-					if (sendto(s, buf, strlen(buf), 0, NULL, 0) == -1) {
-
-						// output an error message
-						perror("TCPWebLog-Client (sendto)");
+					// establish a connection to the server
+					if (connect(s, &si_server, slen) == -1) {
 						close(s);
 						s = -1;
+						// print an error message
+						perror("TCPWebLog-Client (connect)");
+					}
+				}
+			}
 
-						// log the file on local cache
-						appendlog(buf, cachelog);
+			// add a prefix, source info and newline character to the log line
+			sprintf(buf, "@@%d\t%d\t%s\t%s\t%s", logtype, cluster, clientip, clienthost, rawbuf);
 
-					} else { // the line has been successfully sent
+			if (s > 0) {
 
-						// try to send log files on cache (if any)
-						fp = fopen(cachelog, "rwb+");
+				// send line
+				if (sendto(s, buf, strlen(buf), 0, NULL, 0) == -1) {
 
-						if (fp != NULL) {
-							// get starting line position
-							cpos = ftell(fp);
-							cerr = 0;
-							// send the cache logs
-							while (fgets(buf, BUFLEN, fp) != NULL) {
-								// check for valid lines
-								if ((buf[0] == '@') && ((blen = strlen(buf)) > 10)) {
-									// send line
-									if (sendto(s, buf, blen, 0, NULL, 0) == -1) {
-										// output an error message
-										perror("TCPWebLog-Client (sendto)");
-										// mark error
-										cerr = 1;
-										// close connection
-										close(s);
-										s = -1;
-										// exit from while loop
-										break;
-									} else {
-										// store the starting line position
-										tpos = cpos;
-										// get next line position
-										cpos = ftell(fp);
-										// move pointer at the beginning of the sent line
-										fseek(fp, tpos, SEEK_SET);
-										// mark line as sent
-										fputc(LMARK, fp);
-										// restore file pointer position
-										fseek(fp, cpos, SEEK_SET);
-									}
-								}
-							}
-							if (cerr == 0) {
-								// remove the cache file
-								remove(cachelog);
-							}
-							fclose(fp);
-						}
-
-					} // end of else - when sending is working
-
-				} else { // we do not have a valid socket
+					// output an error message
+					perror("TCPWebLog-Client (sendto)");
+					close(s);
+					s = -1;
 
 					// log the file on local cache
 					appendlog(buf, cachelog);
-				}
 
-				// skip newline characters
-				while (scanf("%1[\n]s", &rawbuf)) {}
+				} else { // the line has been successfully sent
 
-			} // end scan line
-		} // end if rawbuf length
+					// try to send log files on cache (if any)
+					fp = fopen(cachelog, "rwb+");
+
+					if (fp != NULL) {
+						// get starting line position
+						cpos = ftell(fp);
+						cerr = 0;
+						// send the cache logs
+						while (fgets(buf, BUFLEN, fp) != NULL) {
+							// check for valid lines
+							if ((buf[0] == '@') && ((blen = strlen(buf)) > 10)) {
+								// send line
+								if (sendto(s, buf, blen, 0, NULL, 0) == -1) {
+									// output an error message
+									perror("TCPWebLog-Client (sendto)");
+									// mark error
+									cerr = 1;
+									// close connection
+									close(s);
+									s = -1;
+									// exit from while loop
+									break;
+								} else {
+									// store the starting line position
+									tpos = cpos;
+									// get next line position
+									cpos = ftell(fp);
+									// move pointer at the beginning of the sent line
+									fseek(fp, tpos, SEEK_SET);
+									// mark line as sent
+									fputc(LMARK, fp);
+									// restore file pointer position
+									fseek(fp, cpos, SEEK_SET);
+								}
+							}
+						}
+						if (cerr == 0) {
+							// remove the cache file
+							remove(cachelog);
+						}
+						fclose(fp);
+					}
+
+				} // end of else - when sending is working
+
+			} else { // we do not have a valid socket
+
+				// log the file on local cache
+				appendlog(buf, cachelog);
+			}
+
+		} // end scan line
 
 	} // end of while (1)
 
 	// free resources
 	close(s);
+	free(rawbuf);
 	free(ch);
 	free(ipaddress);
 	free(cachelog);

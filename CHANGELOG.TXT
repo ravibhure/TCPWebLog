@@ -1,3 +1,6 @@
+1.0.3 (2012-06-11)
+	- TCP sender now uses getline() instead of scanf() to read the imput. 
+
 1.0.2 (2012-06-08)
 	- TCP sender and receiver are now able to reuse previously unclosed connections.
 
