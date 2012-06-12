@@ -2,8 +2,8 @@
 //=============================================================================+
 // File name   : tcpweblog_client.c
 // Begin       : 2012-02-28
-// Last Update : 2012-06-11
-// Version     : 1.0.3
+// Last Update : 2012-06-12
+// Version     : 1.0.4
 //
 // Website     : https://github.com/fubralimited/TCPWebLog
 //
@@ -199,7 +199,7 @@ int main(int argc, char *argv[]) {
 	while (1) {
 
 		// read one line at time from stdin
-		while (getline(&rawbuf, &rblen, stdin) != -1) {
+		if (getline(&rawbuf, &rblen, stdin) != -1) {
 
 			// try to open a TCP connection if not already open
 			if (s <= 0) {

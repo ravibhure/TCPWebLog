@@ -1,3 +1,6 @@
+1.0.4 (2012-06-12)
+	- A TCP sender double while problem was fixed.
+
 1.0.3 (2012-06-11)
 	- TCP sender now uses getline() instead of scanf() to read the imput. 
 
