@@ -2,8 +2,8 @@
 //=============================================================================+
 // File name   : tcpweblog_client.c
 // Begin       : 2012-02-28
-// Last Update : 2012-06-12
-// Version     : 1.0.4
+// Last Update : 2012-06-13
+// Version     : 1.1.0
 //
 // Website     : https://github.com/fubralimited/TCPWebLog
 //
@@ -108,21 +108,6 @@ void appendlog(const char *s, const char *file) {
  */
 int main(int argc, char *argv[]) {
 
-	// file pointer
-	char *ch = NULL;
-
-	// structure containing an Internet socket address for server: an address family (always AF_INET for our purposes), a port number, an IP address
-	struct sockaddr_in si_server;
-
-	// size of si_server
-	int slen = sizeof(si_server);
-
-	// socket
-	int s;
-
-	// option for SOL_SOCKET
-	int optval = 1;
-
 	// decode arguments
 	if (argc != 8) {
 		perror("This program accept log text lines as input and sends them via TCP to the specified IP:PORT.\nYou must provide 7 arguments:\n - remote_ip_address: the IP address of the listening remote log server;\n - remote_port: the TCP	port of the listening remote log server;\n - local_cache_file: the local cache file to temporarily store the logs when the TCP connection is not available;\n - log_type: the log type:\n  1 : Apache Access Log;\n  2 : Apache Error Log;\n  3 : Apache SSL Access Log;\n  4 : Apache SSL Error Log;\n  5 : Varnish NCSA Log (you must prefix the log format with: \"%h %V\");\n  6 : PHP log;\n  7 : FTP log;\n - cluster_number: the cluster number;\n - client_ip: the client (local) IP address;\n - client_hostname: the client (local) hostname.\n\nEXAMPLES:\n\n \tAPACHE\n\t\tCustomLog \"| /usr/bin/tcpweblog_client.bin 10.0.3.15 9940 /var/log/tcpweblog_cache.log 1 1 10.0.2.15 xhost\" combined\n\t\tErrorLog \"| /usr/bin/tcpweblog_client.bin 10.0.3.15 9940 /var/log/tcpweblog_cache.log 2 1 10.0.2.15 xhost\"\n\n\tAPACHE SSL\n\t\tCustomLog \"| /usr/bin/tcpweblog_client.bin 10.0.3.15 9940 /var/log/tcpweblog_cache.log 3 1 10.0.2.15 xhost\" combined\n\t\tErrorLog \"| /usr/bin/tcpweblog_client.bin 10.0.3.15 9940 /var/log/tcpweblog_cache.log 4 1 10.0.2.15 xhost\"\n\n\tVARNISHNCSA\n\t\tYou must prefix the log format with \"%h %V\", for example:\n\t\tvarnishncsa -F \"%h %V %{X-Forwarded-For}i %l %u %t \\\"%r\\\" %>s %b \\\"%{Referer}i\\\" \\\"%{User-Agent}i\\\"\" | /usr/bin/tcpweblog_client.bin 10.0.3.15 9940 /var/log/tcpweblog_cache.log 5 1 - -\n\n\tIf using SELinux, run the following command to allow the Apache daemon to open network connections:\n\t\tsetsebool -P httpd_can_network_connect=1");
@@ -152,6 +137,11 @@ int main(int argc, char *argv[]) {
 	// the local hostname
 	char *clienthost = (char *)argv[7];
 
+	// file pointer
+	char *ch = NULL;
+
+	// option for SOL_SOCKET
+	int optval = 1;
 
 	// buffer used to read input data
 	char *rawbuf = NULL;
@@ -159,8 +149,14 @@ int main(int argc, char *argv[]) {
 	// length of the raw buffer
 	size_t rblen = 0;
 
+	// count read chars with getline
+	int glen = 0;
+
 	// buffer used for a single log line
 	char buf[BUFLEN];
+
+	// initialize buffers
+	memset(buf, 0, BUFLEN);
 
 	// file pointer for local cache
 	FILE *fp;
@@ -177,42 +173,60 @@ int main(int argc, char *argv[]) {
 	// used to track errors when sending cached content
 	int cerr = 0;
 
+	// socket
+	int s = -1;
+
+	// structure containing an Internet socket address for server: an address family (always AF_INET for our purposes), a port number, an IP address
+	struct sockaddr_in6 si_server;
+
+	// size of si_server
+	int slen = sizeof(si_server);
+
+	// use IPv6 internet address
+	si_server.sin6_family = AF_INET6;
+
 	// initialize the si_server structure filling it with binary zeros
 	memset((char *) &si_server, 0, slen);
 
-	// use internet address
-	si_server.sin_family = AF_INET;
+	// use IPv6 internet address
+	si_server.sin6_family = AF_INET6;
 
 	// set the IP address we want to bind to.
-	si_server.sin_addr.s_addr = inet_addr(ipaddress);
+	inet_pton(si_server.sin6_family, ipaddress, &(si_server.sin6_addr));
 
 	// set the port to listen to, and ensure the correct byte order
-	si_server.sin_port = htons(port);
+	si_server.sin6_port = htons(port);
 
-	// initialize buffers
-	memset(buf, 0, BUFLEN);
-
-	// initialize socket
-	s = -1;
+	// check if the program is in loop mode
+	int loopcontrol = 0;
 
 	// forever
-	while (1) {
+	while (loopcontrol < 2) {
+
+		rawbuf = NULL;
+		rblen = 0;
 
 		// read one line at time from stdin
-		if (getline(&rawbuf, &rblen, stdin) != -1) {
+		if ((glen = getline(&rawbuf, &rblen, stdin)) != -1) {
+
+			loopcontrol = 0;
 
 			// try to open a TCP connection if not already open
 			if (s <= 0) {
 				// start of block of data : create a network socket.
 				// AF_INET says that it will be an Internet socket.
 				// SOCK_STREAM Provides sequenced, reliable, two-way, connection-based byte streams.
-				if ((s = socket(AF_INET, SOCK_STREAM, 0)) == -1) {
+				if ((s = socket(si_server.sin6_family, SOCK_STREAM, 0)) == -1) {
 					// print an error message
 					perror("TCPWebLog-Client (socket)");
 				} else {
+					// set socket to listen only IPv6
+					if (setsockopt(s, IPPROTO_IPV6, IPV6_V6ONLY, &optval, sizeof(optval)) == -1) {
+						perror("TCPWebLog-Client (setsockopt : IPPROTO_IPV6 - IPV6_V6ONLY)");
+					}
 					// set SO_REUSEADDR on socket to true (1):
 					if (setsockopt(s, SOL_SOCKET, SO_REUSEADDR, &optval, sizeof(optval)) == -1) {
-						perror("ServerUsage-Server (setsockopt)");
+						perror("TCPWebLog-Client (setsockopt : SOL_SOCKET - SO_REUSEADDR)");
 					}
 					// establish a connection to the server
 					if (connect(s, &si_server, slen) == -1) {
@@ -224,13 +238,13 @@ int main(int argc, char *argv[]) {
 				}
 			}
 
-			// add a prefix, source info and newline character to the log line
+			// add a prefix and source info to the log line
 			sprintf(buf, "@@%d\t%d\t%s\t%s\t%s", logtype, cluster, clientip, clienthost, rawbuf);
 
 			if (s > 0) {
 
 				// send line
-				if (sendto(s, buf, strlen(buf), 0, NULL, 0) == -1) {
+				if (send(s, buf, strlen(buf), 0) == -1) {
 
 					// output an error message
 					perror("TCPWebLog-Client (sendto)");
@@ -294,6 +308,8 @@ int main(int argc, char *argv[]) {
 			}
 
 		} // end scan line
+
+		++loopcontrol;
 
 	} // end of while (1)
 

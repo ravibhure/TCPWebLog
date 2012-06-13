@@ -1,3 +1,8 @@
+1.1.0 (2012-06-13)
+	- TCP sender and receiver were set to use IPv6 protocol by default.
+	- Some Problems on TCP sender and receiver were fixed.
+	- Infinite loop problem was fixed.
+
 1.0.4 (2012-06-12)
 	- A TCP sender double while problem was fixed.
 

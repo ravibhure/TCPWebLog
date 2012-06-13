@@ -2,8 +2,8 @@
 //=============================================================================+
 // File name   : tcpweblog_server.c
 // Begin       : 2012-02-14
-// Last Update : 2012-06-08
-// Version     : 1.0.4
+// Last Update : 2012-06-13
+// Version     : 1.1.0
 //
 // Website     : https://github.com/fubralimited/TCPWebLog
 //
@@ -290,19 +290,14 @@ void *connection_thread(void *cargs) {
 
 	#ifdef _DEBUG
 		starttime = time(NULL);
-		printf("START TIME [sec]: %d\n", starttime);
+		printf("  START TIME [sec]: %d\n", starttime);
 	#endif
 
 	// receive a message from ns and put data int buf (limited to BUFLEN characters)
-	while (read(arg.socket_conn, buf, READBUFLEN) > 0) {
+	while ((buflen = read(arg.socket_conn, buf, READBUFLEN)) > 0) {
 
-		// length of buffer
-		buflen = strlen(buf);
-
-		// add a buffer terminator if missing
-		if (buf[(buflen - 1)] != 2) {
-			buf[buflen] = 2;
-		}
+		// mark the end of buffer (used to recompose splitted lines)
+		buf[buflen] = 2;
 
 		// split stream into lines
 		row = strtok_r(buf, delims, &endstr);
@@ -319,7 +314,7 @@ void *connection_thread(void *cargs) {
 				}
 			} else { // we reached the end of a line
 				if (splitline == 1) { // reconstruct splitted line
-					if ((row[0] != '@') || (row[2] != '@')) {
+					if ((row[0] != '@') || (row[1] != '@')) {
 						// recompose the line
 						strcat(lastrow, row);
 						// insert row on database
@@ -350,7 +345,7 @@ void *connection_thread(void *cargs) {
 
 	#ifdef _DEBUG
 		endtime = time(NULL);
-		printf("  END TIME [sec]: %d\n", endtime);
+		printf("    END TIME [sec]: %d\n", endtime);
 		printf("ELAPSED TIME [sec]: %d\n\n", (endtime - starttime));
 	#endif
 
@@ -369,12 +364,41 @@ void *connection_thread(void *cargs) {
  */
 int main(int argc, char *argv[]) {
 
+	// decode arguments
+	if (argc != 4) {
+		diep("This program listen on specified IP:PORT for incoming TCP messages from tcpweblog_client.bin, and split them on local filesystem by IP address and type.\nYou must provide 3 arguments: port, max_conenctions, root_directory \nFOR EXAMPLE:\n./tcpweblog_server.bin 9940 100 \"/cluster/\"");
+	}
+
+	// listening TCP port
+	int port = atoi(argv[1]);
+
+	// max number of connections
+	int maxconn = atoi(argv[2]);
+
+	// root directory where to put log files
+	rootdir = (char *)argv[3];
+
+	// thread identifier
+	pthread_t tid;
+
+	// thread attributes
+	pthread_attr_t tattr;
+
+	// thread number
+	int tn = 0;
+
+	// arguments be passes on thread
+	targs cargs[maxconn];
+
+	// option for SOL_SOCKET
+	int optval = 1;
+
 	// structure containing an Internet socket address: an address family (always AF_INET for our purposes), a port number, an IP address
 	// si_server defines the socket where the server will listen.
-	struct sockaddr_in si_server;
+	struct sockaddr_in6 si_server;
 
 	// defines the socket at the other end of the link (that is, the client)
-	struct sockaddr_in si_client;
+	struct sockaddr_in6 si_client;
 
 	// size of si_client
 	int slen = sizeof(si_client);
@@ -385,57 +409,37 @@ int main(int argc, char *argv[]) {
 	// new socket
 	int ns = -1;
 
-	// option for SOL_SOCKET
-	int optval = 1;
+	// initialize the si_server structure filling it with binary zeros
+	memset((char *) &si_server, 0, slen);
 
-	// thread number
-	int tn = 0;
+	// use internet address
+	si_server.sin6_family = AF_INET6;
 
-	// decode arguments
-	if (argc != 4) {
-		diep("This program listen on specified IP:PORT for incoming TCP messages from tcpweblog_client.bin, and split them on local filesystem by IP address and type.\nYou must provide 3 arguments: port, max_conenctions, root_directory \nFOR EXAMPLE:\n./tcpweblog_server.bin 9940 100 \"/cluster/\"");
-	}
+	// listen to any IP address
+	si_server.sin6_addr = in6addr_any;
 
-	// thread identifier
-	pthread_t tid;
-
-	// thread attributes
-	pthread_attr_t tattr;
-
-	// set input values
-	int port = atoi(argv[1]);
-	int maxconn = atoi(argv[2]);
-	rootdir = (char *)argv[3];
-
-	// arguments be passes on thread
-	targs cargs[maxconn];
+	// set the port to listen to, and ensure the correct byte order
+	si_server.sin6_port = htons(port);
 
 	// Create a network socket.
 	// AF_INET says that it will be an Internet socket.
 	// SOCK_STREAM Provides sequenced, reliable, two-way, connection-based byte streams.
-	if ((s = socket(AF_INET, SOCK_STREAM, 0)) == -1) {
+	if ((s = socket(si_server.sin6_family, SOCK_STREAM, 0)) == -1) {
 		diep("TCPWebLog-Server (socket)");
+	}
+
+	// set socket to listen only IPv6
+	if (setsockopt(s, IPPROTO_IPV6, IPV6_V6ONLY, &optval, sizeof(optval)) == -1) {
+		diep("TCPWebLog-Server (setsockopt : IPPROTO_IPV6 - IPV6_V6ONLY)");
 	}
 
 	// set SO_REUSEADDR on socket to true (1):
 	if (setsockopt(s, SOL_SOCKET, SO_REUSEADDR, &optval, sizeof(optval)) == -1) {
-		diep("ServerUsage-Server (setsockopt)");
+		diep("TCPWebLog-Server (setsockopt : SOL_SOCKET - SO_REUSEADDR)");
 	}
 
-	// initialize the si_server structure filling it with binary zeros
-	memset((char *) &si_server, 0, sizeof(si_server));
-
-	// use internet address
-	si_server.sin_family = AF_INET;
-
-	// set the port to listen to, and ensure the correct byte order
-	si_server.sin_port = htons(port);
-
-	// bind to any IP address
-	si_server.sin_addr.s_addr = htonl(INADDR_ANY);
-
 	// bind the socket s to the address in si_server.
-	if (bind(s, (struct sockaddr *) &si_server, sizeof(si_server)) == -1) {
+	if (bind(s, (struct sockaddr *) &si_server, slen) == -1) {
 		diep("TCPWebLog-Server (bind)");
 	}
 
