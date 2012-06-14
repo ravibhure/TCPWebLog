@@ -43,19 +43,17 @@ This project is composed by 2 sub-projects:
 
 ## TCPWebLog-Client ##
 
-The TCPWebLog-Client program accepts a log text input and sends each line to a 
-remote server via TCP. It can be used to pipe Apache, Varnish, PHP and FTP logs.
+The TCPWebLog-Client program accepts a log text input and sends each line to a remote server via TCP. It can be used to pipe Apache, Varnish and other types of logs.
 
 
 ## TCPWebLog-Server ##
 
-The TCPWebLog-Server program listen on a TCP port for incoming log data 
-(from TCPWebLog-Client) and process them.
+The TCPWebLog-Server program listen on a TCP port for incoming log data (from TCPWebLog-Client) and process them by aggregating the data on different log files.
 
 
 ## GENERAL USAGE SCHEMA ##
 	
-	(TCPWebLog-Client) - - - - - - - - - - - -> (TCPWebLog-Server)
+	(TCPWebLog-Client) - - - TCP connection  - - -> (TCPWebLog-Server)
 
 
 
