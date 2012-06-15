@@ -1,3 +1,6 @@
+1.2.0 (2012-06-15)
+	- Log type numbers were changed to include a global configuration for Apache CustomLog.
+
 1.1.0 (2012-06-13)
 	- TCP sender and receiver were set to use IPv6 protocol by default.
 	- Some Problems on TCP sender and receiver were fixed.

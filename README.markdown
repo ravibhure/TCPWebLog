@@ -3,9 +3,9 @@ TCPWebLog - README
 
 + Name: TCPWebLog
 
-+ Version: 1.1.0
++ Version: 1.2.0
 
-+ Release date: 2012-06-13
++ Release date: 2012-06-15
 
 + Author: Nicola Asuni
 
@@ -36,19 +36,19 @@ See LICENSE.TXT file for more information.
 DESCRIPTION:
 ------------
 
-The TCPWebLog system is designed to collect and process Apache-style logs.
-
-This project is composed by 2 sub-projects:
+TCPWebLog is a Free Open Source Software system to collect and aggregate Web logs (i.e. Apache and Varnish) from multiple GNU/Linux computers running on a Cloud.
+This system is basically composed by a simple "client" program used to directly pipe the Web logs to a central server via TCP connection, and a "server" program to receive the logs and quickly aggregate/split them by case:
 
 
 ## TCPWebLog-Client ##
 
-The TCPWebLog-Client program accepts a log text input and sends each line to a remote server via TCP. It can be used to pipe Apache, Varnish and other types of logs.
+This section contains the software to be installed on the cluster nodes. It is essentially composed by the tcpweblog_client.bin program to transmit the input log data to a remote server through a TCP connection.
 
 
 ## TCPWebLog-Server ##
 
-The TCPWebLog-Server program listen on a TCP port for incoming log data (from TCPWebLog-Client) and process them by aggregating the data on different log files.
+The TCPWebLog-Server program listens on a TCP port for incoming log data from multiple TCPWebLog-Client clients and stores the logs on the local filesystem.
+Once installed and configured, this system can be easily started and stopped using the provided SysV init script.
 
 
 ## GENERAL USAGE SCHEMA ##
@@ -130,7 +130,7 @@ INSTALL SERVERUSAGE SERVER:
 
 As root install the TCPWebLog-Server RPM file:
 
-	# rpm -i tcpweblog_server-1.1.0-1.el6.$(uname -m).rpm 
+	# rpm -i tcpweblog_server-1.2.0-1.el6.$(uname -m).rpm 
 	
 Configure the TCPWebLog-Server
 
@@ -149,40 +149,45 @@ INSTALL SERVERUSAGE CLIENT:
 
 As root install the SystemTap runtime and TCPWebLog-Client RPM files:
 
-	# rpm -i tcpweblog_client-1.1.0-1.el6.$(uname -m).rpm
+	# rpm -i tcpweblog_client-1.2.0-1.el6.$(uname -m).rpm
 	
 Configure the logs
 
-	The arguments of tcpweblog_client.bin are:
+	The 7 arguments of tcpweblog_client.bin are:
 
-	 - the IP address of the listening remote log server;
-	 - the TCP	port of the listening remote log server;
-	 - the local cache file to temporarily store the logs when the TCP
-	   connection is not available;
-	 - the log type:
-		1 : Apache Access Log;
-		2 : Apache Error Log;
-		3 : Apache SSL Access Log;
-		4 : Apache SSL Error Log;
-		5 : Varnish NCSA Log (you must prefix the log format with: "%h %V");
-		6 : FTP log;
-		7 : PHP error log;
-	 - the cluster number;
-	 - the client (local) IP address;
-	 - the client (local) hostname.
+	 - remote_ip_address: the IP address of the listening remote log server;
+	 - remote_port: the TCP	port of the listening remote log server;
+	 - local_cache_file: the local cache file to temporarily store the logs when the TCP connection is not available;
+	 - log_type: the log type:
+		1 : Apache Access Log (per virtual host);
+		2 : Apache Error Log (per virtual host);
+		3 : Apache SSL Access Log (per virtual host);
+		4 : Apache SSL Error Log (per virtual host);
+		5 : Apache Access Log (global config - you must prefix the log format with: "%h %V");
+		6 : Varnish NCSA Log (you must prefix the log format with: "%h %V");
+		7 : PHP log;
+		8 : FTP log;
+	 - cluster_number: the cluster number;
+	 - client_ip: the client (local) IP address;
+	 - client_hostname: the client (local) hostname.
 
 Examples
 
-	APACHE
+	APACHE (per each virtual host)
 		CustomLog "| /usr/bin/tcpweblog_client.bin 10.0.3.15 9940 /var/log/tcpweblog_cache.log 1 1 10.0.2.15 xhost" combined
 		ErrorLog "| /usr/bin/tcpweblog_client.bin 10.0.3.15 9940 /var/log/tcpweblog_cache.log 2 1 10.0.2.15 xhost"
 
-	APACHE SSL
+	APACHE SSL (per each virtual host)
 		CustomLog "| /usr/bin/tcpweblog_client.bin 10.0.3.15 9940 /var/log/tcpweblog_cache.log 3 1 10.0.2.15 xhost" combined
 		ErrorLog "| /usr/bin/tcpweblog_client.bin 10.0.3.15 9940 /var/log/tcpweblog_cache.log 4 1 10.0.2.15 xhost"
 
+	APACHE (general CustomLog)
+		# you must prefix the log format with "%h %V", for example:
+		LogFormat "%h %V %{X-Forwarded-For}i %l %u %t \"%r\" %>s %b \"%{Referer}i\" \"%{User-Agent}i\"" tcpweblog
+		CustomLog "| /usr/bin/tcpweblog_client.bin 10.0.3.15 9940 /var/log/tcpweblog_cache.log 5 1 - -" tcpweblog
+
 	VARNISHNCSA
-		You must prefix the log format with "%h %V", for example:
-		varnishncsa -F "%h %V %{X-Forwarded-For}i %l %u %t \"%r\" %>s %b \"%{Referer}i\" \"%{User-Agent}i\"" | /usr/bin/tcpweblog_client.bin 10.0.3.15 9940 /var/log/tcpweblog_cache.log 5 1 - -
+		# you must prefix the log format with "%h %V", for example:
+		varnishncsa -F "%h %V %{X-Forwarded-For}i %l %u %t \"%r\" %>s %b \"%{Referer}i\" \"%{User-Agent}i\"" | /usr/bin/tcpweblog_client.bin 10.0.3.15 9940 /var/log/tcpweblog_cache.log 6 1 - -
 
-
+On the above examples we are simply "piping" the log data to our program.

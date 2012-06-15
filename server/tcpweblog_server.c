@@ -2,8 +2,8 @@
 //=============================================================================+
 // File name   : tcpweblog_server.c
 // Begin       : 2012-02-14
-// Last Update : 2012-06-13
-// Version     : 1.1.0
+// Last Update : 2012-06-15
+// Version     : 1.2.0
 //
 // Website     : https://github.com/fubralimited/TCPWebLog
 //
@@ -206,10 +206,27 @@ void process_row(char *row) {
 			sprintf(file, "%s%03d/logs/ip/%s/%s.ssl.error.log", rootdir, cluster, clientip, clienthost);
 			break;
 		}
-		// Varnish NCSA Log
+		// Apache access (global config for all virtual hosts)
 		// You must prefix the log format with "%h %V", for example:
 		// "%h %V %{X-Forwarded-For}i %l %u %t \"%r\" %>s %b \"%{Referer}i\" \"%{User-Agent}i\""
 		case 5: {
+			// get the IP address
+			strcpy(clientip, strtok_r(logline, " ", &endstr));
+			// get the hostname
+			strcpy(clienthost, strtok_r(NULL, " ", &endstr));
+			// get original log line
+			strcpy(tmpline, strtok_r(NULL, "\n", &endstr));
+			// add newline char
+			strcat(tmpline, "\n");
+			strcpy(logline, tmpline);
+			// compose file name and path
+			sprintf(file, "%s%03d/logs/ip/%s/%s.access.log", rootdir, cluster, clientip, clienthost);
+			break;
+		}
+		// Varnish NCSA Log
+		// You must prefix the log format with "%h %V", for example:
+		// "%h %V %{X-Forwarded-For}i %l %u %t \"%r\" %>s %b \"%{Referer}i\" \"%{User-Agent}i\""
+		case 6: {
 			// get the IP address
 			strcpy(clientip, strtok_r(logline, " ", &endstr));
 			// get the hostname
@@ -224,7 +241,7 @@ void process_row(char *row) {
 			break;
 		}
 		// FTP Error Log
-		case 6: {
+		case 7: {
 			strtok_r(logline, " ", &endstr);
 			strtok_r(NULL, " ", &endstr);
 			// get the FTP username (ident)
@@ -234,7 +251,7 @@ void process_row(char *row) {
 			break;
 		}
 		// PHP Error Log
-		case 7: {
+		case 8: {
 			// compose file name and path
 			sprintf(file, "%s%03d/logs/ip/%s/%s.php.error.log", rootdir, cluster, clientip, clienthost);
 			break;
