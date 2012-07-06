@@ -3,9 +3,9 @@ TCPWebLog - README
 
 + Name: TCPWebLog
 
-+ Version: 1.2.0
++ Version: 1.4.0
 
-+ Release date: 2012-06-15
++ Release date: 2012-07-06
 
 + Author: Nicola Asuni
 
@@ -130,7 +130,7 @@ INSTALL SERVERUSAGE SERVER:
 
 As root install the TCPWebLog-Server RPM file:
 
-	# rpm -i tcpweblog_server-1.2.0-1.el6.$(uname -m).rpm 
+	# rpm -i tcpweblog_server-1.4.0-1.el6.$(uname -m).rpm 
 	
 Configure the TCPWebLog-Server
 
@@ -149,7 +149,7 @@ INSTALL SERVERUSAGE CLIENT:
 
 As root install the SystemTap runtime and TCPWebLog-Client RPM files:
 
-	# rpm -i tcpweblog_client-1.2.0-1.el6.$(uname -m).rpm
+	# rpm -i tcpweblog_client-1.4.0-1.el6.$(uname -m).rpm
 	
 Configure the logs
 
@@ -163,10 +163,10 @@ Configure the logs
 		2 : Apache Error Log (per virtual host);
 		3 : Apache SSL Access Log (per virtual host);
 		4 : Apache SSL Error Log (per virtual host);
-		5 : Apache Access Log (global config - you must prefix the log format with: "%h %V");
-		6 : Varnish NCSA Log (you must prefix the log format with: "%h %V");
-		7 : PHP log;
-		8 : FTP log;
+		5 : Apache Access Log (global config - you must prefix the log format with: \"%h %V\");
+		6 : Varnish NCSA Log (you must prefix the log format with: \"%h %V\");
+		7 : FTP log;
+		8 : PHP log using the tcpweblog php extension.
 	 - cluster_number: the cluster number;
 	 - client_ip: the client (local) IP address;
 	 - client_hostname: the client (local) hostname.

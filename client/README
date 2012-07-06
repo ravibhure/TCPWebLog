@@ -3,9 +3,9 @@ TCPWebLog-Client - README
 
 Name: TCPWebLog-Client
 
-Version: 1.2.0
+Version: 1.4.0
 
-Release date: 2012-06-15
+Release date: 2012-07-06
 
 Author: Nicola Asuni (nicola@fubra.com)
 
@@ -95,13 +95,14 @@ This folder contains the source code of TCPWebLog-Client:
 	 - the local cache file to temporarily store the logs when the TCP
 	   connection is not available;
 	 - the log type:
-		1 : Apache Access Log;
-		2 : Apache Error Log;
-		3 : Apache SSL Access Log;
-		4 : Apache SSL Error Log;
-		5 : Varnish NCSA Log (you must prefix the log format with: "%h %V");
-		6 : FTP log;
-		7 : PHP error log;
+		1 : Apache Access Log (per virtual host);
+		2 : Apache Error Log (per virtual host);
+		3 : Apache SSL Access Log (per virtual host);
+		4 : Apache SSL Error Log (per virtual host);
+		5 : Apache Access Log (global config - you must prefix the log format with: \"%h %V\");
+		6 : Varnish NCSA Log (you must prefix the log format with: \"%h %V\");
+		7 : FTP log;
+		8 : PHP log using the tcpweblog php extension.
 	 - the cluster number;
 	 - the client (local) IP address;
 	 - the client (local) hostname.

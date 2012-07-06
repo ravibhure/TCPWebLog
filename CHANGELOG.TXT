@@ -1,3 +1,9 @@
+1.4.0 (2012-07-06)
+	- PHP log mode was changed
+
+1.3.0 (2012-07-06)
+	- Support for tcpweblog php extension was added.
+
 1.2.0 (2012-06-15)
 	- Log type numbers were changed to include a global configuration for Apache CustomLog.
 
