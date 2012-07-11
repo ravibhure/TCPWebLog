@@ -3,9 +3,9 @@ TCPWebLog - README
 
 + Name: TCPWebLog
 
-+ Version: 1.4.0
++ Version: 1.5.0
 
-+ Release date: 2012-07-06
++ Release date: 2012-07-11
 
 + Author: Nicola Asuni
 
@@ -130,7 +130,7 @@ INSTALL SERVERUSAGE SERVER:
 
 As root install the TCPWebLog-Server RPM file:
 
-	# rpm -i tcpweblog_server-1.4.0-1.el6.$(uname -m).rpm 
+	# rpm -i tcpweblog_server-1.5.0-1.el6.$(uname -m).rpm 
 	
 Configure the TCPWebLog-Server
 
@@ -149,45 +149,40 @@ INSTALL SERVERUSAGE CLIENT:
 
 As root install the SystemTap runtime and TCPWebLog-Client RPM files:
 
-	# rpm -i tcpweblog_client-1.4.0-1.el6.$(uname -m).rpm
+	# rpm -i tcpweblog_client-1.5.0-1.el6.$(uname -m).rpm
 	
 Configure the logs
 
 	The 7 arguments of tcpweblog_client.bin are:
 
-	 - remote_ip_address: the IP address of the listening remote log server;
-	 - remote_port: the TCP	port of the listening remote log server;
-	 - local_cache_file: the local cache file to temporarily store the logs when the TCP connection is not available;
-	 - log_type: the log type:
-		1 : Apache Access Log (per virtual host);
-		2 : Apache Error Log (per virtual host);
-		3 : Apache SSL Access Log (per virtual host);
-		4 : Apache SSL Error Log (per virtual host);
-		5 : Apache Access Log (global config - you must prefix the log format with: \"%h %V\");
-		6 : Varnish NCSA Log (you must prefix the log format with: \"%h %V\");
-		7 : FTP log;
-		8 : PHP log using the tcpweblog php extension.
-	 - cluster_number: the cluster number;
-	 - client_ip: the client (local) IP address;
-	 - client_hostname: the client (local) hostname.
+	- remote_ip_address: the IP address of the listening remote log server;
+	- remote_port: the TCP	port of the listening remote log server;
+	- local_cache_file: the local cache file to temporarily store the logs when the TCP connection is not available;
+	- logname: the last part of the log file name (i.e.: access.log);
+	- cluster_number: the cluster number;
+	- client_ip: the client (local) IP address;
+	- client_hostname: the client (local) hostname.
 
-Examples
+EXAMPLES:
 
-	APACHE (per each virtual host)
-		CustomLog "| /usr/bin/tcpweblog_client.bin 10.0.3.15 9940 /var/log/tcpweblog_cache.log 1 1 10.0.2.15 xhost" combined
-		ErrorLog "| /usr/bin/tcpweblog_client.bin 10.0.3.15 9940 /var/log/tcpweblog_cache.log 2 1 10.0.2.15 xhost"
+	APACHE (configuration per virtual host)
+		CustomLog \"| /usr/bin/tcpweblog_client.bin 10.0.3.15 9940 /var/log/tcpweblog_cache.log access.log 1 10.0.2.15 xhost\" combined
+		ErrorLog \"| /usr/bin/tcpweblog_client.bin 10.0.3.15 9940 /var/log/tcpweblog_cache.log error.log 1 10.0.2.15 xhost\"
 
-	APACHE SSL (per each virtual host)
-		CustomLog "| /usr/bin/tcpweblog_client.bin 10.0.3.15 9940 /var/log/tcpweblog_cache.log 3 1 10.0.2.15 xhost" combined
-		ErrorLog "| /usr/bin/tcpweblog_client.bin 10.0.3.15 9940 /var/log/tcpweblog_cache.log 4 1 10.0.2.15 xhost"
+	APACHE SSL (configuration per virtual host)
+		CustomLog \"| /usr/bin/tcpweblog_client.bin 10.0.3.15 9940 /var/log/tcpweblog_cache.log ssl.access.log 1 10.0.2.15 xhost\" combined
+		ErrorLog \"| /usr/bin/tcpweblog_client.bin 10.0.3.15 9940 /var/log/tcpweblog_cache.log ssl.error.log 1 10.0.2.15 xhost\"
 
 	APACHE (general CustomLog)
-		# you must prefix the log format with "%h %V", for example:
-		LogFormat "%h %V %{X-Forwarded-For}i %l %u %t \"%r\" %>s %b \"%{Referer}i\" \"%{User-Agent}i\"" tcpweblog
-		CustomLog "| /usr/bin/tcpweblog_client.bin 10.0.3.15 9940 /var/log/tcpweblog_cache.log 5 1 - -" tcpweblog
+		# you must prefix the log format with \"%h %V\", for example:
+		LogFormat \"%h %V %{X-Forwarded-For}i %l %u %t \\\"%r\\\" %>s %b \\\"%{Referer}i\\\" \\\"%{User-Agent}i\\\"\" common
+		CustomLog \"| /usr/bin/tcpweblog_client.bin 10.0.3.15 9940 /var/log/tcpweblog_cache.log access.log 1 - -\" common
 
 	VARNISHNCSA
-		# you must prefix the log format with "%h %V", for example:
-		varnishncsa -F "%h %V %{X-Forwarded-For}i %l %u %t \"%r\" %>s %b \"%{Referer}i\" \"%{User-Agent}i\"" | /usr/bin/tcpweblog_client.bin 10.0.3.15 9940 /var/log/tcpweblog_cache.log 6 1 - -
+		You must prefix the log format with \"%h %V\", for example:
+		varnishncsa -F \"%h %V %{X-Forwarded-For}i %l %u %t \\\"%r\\\" %>s %b \\\"%{Referer}i\\\" \\\"%{User-Agent}i\\\"\" | /usr/bin/tcpweblog_client.bin 10.0.3.15 9940 /var/log/tcpweblog_cache.log varnish.log 1 - -
+
+	If using SELinux, run the following command to allow the Apache daemon to open network connections:
+		setsebool -P httpd_can_network_connect=1
 
 On the above examples we are simply "piping" the log data to our program.

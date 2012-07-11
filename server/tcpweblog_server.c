@@ -2,8 +2,8 @@
 //=============================================================================+
 // File name   : tcpweblog_server.c
 // Begin       : 2012-02-14
-// Last Update : 2012-07-06
-// Version     : 1.4.0
+// Last Update : 2012-07-11
+// Version     : 1.5.0
 //
 // Website     : https://github.com/fubralimited/TCPWebLog
 //
@@ -44,12 +44,17 @@
 //=============================================================================+
 */
 
-// TO COMPILE (requires sqlite-devel):
-// gcc -O3 -g -pipe -Wp,-D_THREAD_SAFE -D_FORTIFY_SOURCE=2 -fexceptions -fstack-protector -fno-strict-aliasing -fwrapv -fPIC --param=ssp-buffer-size=4 -D_GNU_SOURCE -o tcpweblog_server.bin tcpweblog_server.c -lpthread
+/*
+TO COMPILE (requires sqlite-devel):
+	gcc -O3 -g -pipe -Wp,-D_THREAD_SAFE -D_FORTIFY_SOURCE=2 -fexceptions -fstack-protector -fno-strict-aliasing -fwrapv -fPIC --param=ssp-buffer-size=4 -D_GNU_SOURCE -o tcpweblog_server.bin tcpweblog_server.c -lpthread
 
-// USAGE EXAMPLES:
-// ./tcpweblog_server.bin PORT MAX_CONNECTIONS ROOT_DIR
-// ./tcpweblog_server.bin 9940 100 "/cluster/"
+USAGE EXAMPLES:
+	./tcpweblog_server.bin PORT MAX_CONNECTIONS ROOT_DIR
+	./tcpweblog_server.bin 9940 100 "/cluster/"
+
+NOTES:
+	You must implement some firewall rules in your server to avoid receiving TCP messages from unauthorized clients.
+*/
 
 #include <pthread.h>
 #include <semaphore.h>
@@ -58,6 +63,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <sys/stat.h>
 #include <sys/types.h>
 #include <sys/socket.h>
 #include <unistd.h>
@@ -103,18 +109,44 @@ void diep(const char *s) {
 /**
  * Append the input string on a log file
  * @param s string to append on log.
+ * @param file file name (including full path).
  */
 void appendlog(const char *s, const char *file) {
 	FILE *fp = NULL;
 	int ret = EOF;
-	fp = fopen(file, "a");
-	if (fp != NULL) {
+	if ((fp = fopen(file, "a")) != NULL) {
 		ret = fputs(s, fp);
 		fclose(fp);
+	} else { // try to create the missing directories
+		// duplicate path
+		char *dirpath = strdup(file);
+		int status = 0;
+		char *pp;
+		char *sp;
+		pp = dirpath;
+		while ((sp = strchr(pp, '/')) != 0) {
+			if (sp != pp) {
+				// terminate string
+				*sp = '\0';
+				// create dir
+				mkdir(dirpath, S_IRWXU | S_IRGRP | S_IXGRP | S_IROTH | S_IXOTH);
+				// restore original character
+				*sp = '/';
+			}
+			// move pointer
+			pp = (sp + 1);
+		}
+		free(dirpath);
+		// try once again to write the file
+		if ((fp = fopen(file, "a")) != NULL) {
+			ret = fputs(s, fp);
+			fclose(fp);
+		}
 	}
 	if (ret == EOF) {
 		// output an error message
 		perror("TCPWebLog-Server (appendlog)");
+		perror(file);
 	}
 }
 
@@ -127,8 +159,8 @@ void process_row(char *row) {
 	// cluster number
 	int cluster = 0;
 
-	// log type
-	int logtype = 0;
+	// log name
+	char logname[BUFLEN];
 
 	// original log line
 	char logline[BUFLEN];
@@ -145,7 +177,7 @@ void process_row(char *row) {
 	// client ident (FTP username)
 	char clientident[256];
 
-	// file path where to store the log line
+	// full file path
 	char file[BUFLEN];
 
 	// pointer for strtok_r
@@ -159,8 +191,8 @@ void process_row(char *row) {
 	// remove first 2 characters "@@"
 	memmove(row, (row + 2), strlen(row));
 
-	// get log type
-	logtype = atoi(strtok_r(row, "\t", &endstr));
+	// get log name
+	strcpy(logname, strtok_r(row, "\t", &endstr));
 
 	// get cluster number prefix
 	cluster = atoi(strtok_r(NULL, "\t", &endstr));
@@ -180,78 +212,21 @@ void process_row(char *row) {
 	// reset strtok_r string pointer
 	endstr = NULL;
 
-	// process lines by type
-	switch (logtype) {
-		// Apache Access Log
-		case 1: {
-			// compose file name and path
-			sprintf(file, "%s%03d/logs/ip/%s/%s.access.log", rootdir, cluster, clientip, clienthost);
-			break;
-		}
-		// Apache Error Log
-		case 2: {
-			// compose file name and path
-			sprintf(file, "%s%03d/logs/ip/%s/%s.error.log", rootdir, cluster, clientip, clienthost);
-			break;
-		}
-		// Apache SSL Access Log
-		case 3: {
-			// compose file name and path
-			sprintf(file, "%s%03d/logs/ip/%s/%s.ssl.access.log", rootdir, cluster, clientip, clienthost);
-			break;
-		}
-		// Apache SSL Error Log
-		case 4: {
-			// compose file name and path
-			sprintf(file, "%s%03d/logs/ip/%s/%s.ssl.error.log", rootdir, cluster, clientip, clienthost);
-			break;
-		}
-		// Apache access (global config for all virtual hosts)
-		// You must prefix the log format with "%h %V", for example:
-		// "%h %V %{X-Forwarded-For}i %l %u %t \"%r\" %>s %b \"%{Referer}i\" \"%{User-Agent}i\""
-		case 5: {
-			// get the IP address
-			strcpy(clientip, strtok_r(logline, " ", &endstr));
-			// get the hostname
-			strcpy(clienthost, strtok_r(NULL, " ", &endstr));
-			// get original log line
-			strcpy(tmpline, strtok_r(NULL, "\n", &endstr));
-			// add newline char
-			strcat(tmpline, "\n");
-			strcpy(logline, tmpline);
-			// compose file name and path
-			sprintf(file, "%s%03d/logs/ip/%s/%s.access.log", rootdir, cluster, clientip, clienthost);
-			break;
-		}
-		// Varnish NCSA Log
-		// You must prefix the log format with "%h %V", for example:
-		// "%h %V %{X-Forwarded-For}i %l %u %t \"%r\" %>s %b \"%{Referer}i\" \"%{User-Agent}i\""
-		case 6: {
-			// get the IP address
-			strcpy(clientip, strtok_r(logline, " ", &endstr));
-			// get the hostname
-			strcpy(clienthost, strtok_r(NULL, " ", &endstr));
-			// get original log line
-			strcpy(tmpline, strtok_r(NULL, "\n", &endstr));
-			// add newline char
-			strcat(tmpline, "\n");
-			strcpy(logline, tmpline);
-			// compose file name and path
-			sprintf(file, "%s%03d/logs/ip/%s/%s.varnish.log", rootdir, cluster, clientip, clienthost);
-			break;
-		}
-		// FTP Error Log
-		case 7: {
+	// check if client IP and host are defined on parameters
+	if ((strlen(clientip) <= 1)) {
+		// try to extract info from log line
+		if (strstr(logname, "ftp") != NULL) {
+			// special case for FTP
 			strtok_r(logline, " ", &endstr);
 			strtok_r(NULL, " ", &endstr);
 			// get the FTP username (ident)
 			strcpy(clientident, strtok_r(NULL, " ", &endstr));
 			// compose file name and path
-			sprintf(file, "%s%03d/logs/ident/%s/%s.ftp.log", rootdir, cluster, clientident, clientident);
-			break;
-		}
-		// PHP error log
-		case 8: {
+			sprintf(file, "%s%03d/logs/ident/%s/%s.%s", rootdir, cluster, clientident, clientident, logname);
+
+		} else { // extract IP and host name from log line
+			// You must prefix the log format with "%h %V", for example:
+			// "%h %V %{X-Forwarded-For}i %l %u %t \"%r\" %>s %b \"%{Referer}i\" \"%{User-Agent}i\""
 			// get the IP address
 			strcpy(clientip, strtok_r(logline, " ", &endstr));
 			// get the hostname
@@ -262,15 +237,12 @@ void process_row(char *row) {
 			strcat(tmpline, "\n");
 			strcpy(logline, tmpline);
 			// compose file name and path
-			sprintf(file, "%s%03d/logs/ip/%s/%s.php.error.log", rootdir, cluster, clientip, clienthost);
-			break;
+			sprintf(file, "%s%03d/logs/ip/%s/%s.%s", rootdir, cluster, clientip, clienthost, logname);
 		}
-		// Unknow log type
-		default: {
-			perror("TCPWebLog-Server (unknown log type)");
-			return;
-			break;
-		}
+
+	} else {
+		// compose file name and path
+		sprintf(file, "%s%03d/logs/ip/%s/%s.%s", rootdir, cluster, clientip, clienthost, logname);
 	}
 
 	// save the log
@@ -392,7 +364,11 @@ int main(int argc, char *argv[]) {
 
 	// decode arguments
 	if (argc != 4) {
-		diep("This program listen on specified IP:PORT for incoming TCP messages from tcpweblog_client.bin, and split them on local filesystem by IP address and type.\nYou must provide 3 arguments: port, max_conenctions, root_directory \nFOR EXAMPLE:\n./tcpweblog_server.bin 9940 100 \"/cluster/\"");
+		diep("\
+This program listen on specified IP:PORT for incoming TCP messages from tcpweblog_client.bin, and split them on local filesystem by IP address and type.\n\
+You must provide 3 arguments: port, max_conenctions, root_directory \n\
+FOR EXAMPLE:\n\
+./tcpweblog_server.bin 9940 100 \"/cluster/\"");
 	}
 
 	// listening TCP port

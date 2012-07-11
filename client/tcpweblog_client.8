@@ -1,5 +1,5 @@
 .\" Manpage for TCPWebLog-Client.
-.TH tcpweblog_client.bin 8 "2012-07-06"
+.TH tcpweblog_client.bin 8 "2012-07-11"
 .SH NAME
 tcpweblog_client.bin \- TCPWebLog-Client
 .SH SYNOPSIS
@@ -30,15 +30,7 @@ Remote log server port (usually 9940)
 Local cache file used to temporarily store data when the TCP connection is not available
 TP
 .BI LOG_TYPE
-The log type:
-1 : Apache Access Log (per virtual host);
-2 : Apache Error Log (per virtual host);
-3 : Apache SSL Access Log (per virtual host);
-4 : Apache SSL Error Log (per virtual host);
-5 : Apache Access Log (global config - you must prefix the log format with: \"%h %V\");
-6 : Varnish NCSA Log (you must prefix the log format with: \"%h %V\");
-7 : FTP log;
-8 : PHP log using the tcpweblog php extension.
+The log file name (i.e.: access.log)
 TP
 .BI CLUSTER_NUMBER
 The cluster number

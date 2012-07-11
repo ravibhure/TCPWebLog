@@ -2,8 +2,8 @@
 //=============================================================================+
 // File name   : tcpweblog_client.c
 // Begin       : 2012-02-28
-// Last Update : 2012-06-15
-// Version     : 1.4.0
+// Last Update : 2012-07-11
+// Version     : 1.5.0
 //
 // Website     : https://github.com/fubralimited/TCPWebLog
 //
@@ -43,29 +43,35 @@
 //=============================================================================+
 */
 
-// TO COMPILE:
-// gcc -O3 -g -pipe -Wp,-D_FORTIFY_SOURCE=2 -fexceptions -fstack-protector -fno-strict-aliasing -fwrapv -fPIC --param=ssp-buffer-size=4 -D_GNU_SOURCE -o tcpweblog_client.bin tcpweblog_client.c
+/*
+TO COMPILE:
+	gcc -O3 -g -pipe -Wp,-D_FORTIFY_SOURCE=2 -fexceptions -fstack-protector -fno-strict-aliasing -fwrapv -fPIC --param=ssp-buffer-size=4 -D_GNU_SOURCE -o tcpweblog_client.bin tcpweblog_client.c
 
-// USAGE EXAMPLES
+USAGE EXAMPLES
 
-// APACHE (per each virtual host)
-// 	CustomLog "| /usr/bin/tcpweblog_client.bin 10.0.3.15 9940 /var/log/tcpweblog_cache.log 1 1 10.0.2.15 xhost" combined
-// 	ErrorLog "| /usr/bin/tcpweblog_client.bin 10.0.3.15 9940 /var/log/tcpweblog_cache.log 2 1 10.0.2.15 xhost"
+	APACHE (configuration per virtual host)
+		CustomLog \"| /usr/bin/tcpweblog_client.bin 10.0.3.15 9940 /var/log/tcpweblog_cache.log access.log 1 10.0.2.15 xhost\" combined
+		ErrorLog \"| /usr/bin/tcpweblog_client.bin 10.0.3.15 9940 /var/log/tcpweblog_cache.log error.log 1 10.0.2.15 xhost\"
 
-// APACHE SSL (per each virtual host)
-// 	CustomLog "| /usr/bin/tcpweblog_client.bin 10.0.3.15 9940 /var/log/tcpweblog_cache.log 3 1 10.0.2.15 xhost" combined
-// 	ErrorLog "| /usr/bin/tcpweblog_client.bin 10.0.3.15 9940 /var/log/tcpweblog_cache.log 4 1 10.0.2.15 xhost"
+	APACHE SSL (configuration per virtual host)
+		CustomLog \"| /usr/bin/tcpweblog_client.bin 10.0.3.15 9940 /var/log/tcpweblog_cache.log ssl.access.log 1 10.0.2.15 xhost\" combined
+		ErrorLog \"| /usr/bin/tcpweblog_client.bin 10.0.3.15 9940 /var/log/tcpweblog_cache.log ssl.error.log 1 10.0.2.15 xhost\"
 
-// APACHE (general CustomLog)
-// 	CustomLog "| /usr/bin/tcpweblog_client.bin 10.0.3.15 9940 /var/log/tcpweblog_cache.log 5 1 10.0.2.15 xhost" combined
+	APACHE (general CustomLog)
+		# you must prefix the log format with \"%h %V\", for example:
+		LogFormat \"%h %V %{X-Forwarded-For}i %l %u %t \\\"%r\\\" %>s %b \\\"%{Referer}i\\\" \\\"%{User-Agent}i\\\"\" common
+		CustomLog \"| /usr/bin/tcpweblog_client.bin 10.0.3.15 9940 /var/log/tcpweblog_cache.log access.log 1 - -\" common
 
-// VARNISHNCSA
-// 	You must prefix the log format with "%h %V", for example:
-//	varnishncsa -F "%h %V %{X-Forwarded-For}i %l %u %t \"%r\" %>s %b \"%{Referer}i\" \"%{User-Agent}i\"" | /usr/bin/tcpweblog_client.bin 10.0.3.15 9940 /var/log/tcpweblog_cache.log 6 1 - -
+	VARNISHNCSA
+		You must prefix the log format with \"%h %V\", for example:
+		varnishncsa -F \"%h %V %{X-Forwarded-For}i %l %u %t \\\"%r\\\" %>s %b \\\"%{Referer}i\\\" \\\"%{User-Agent}i\\\"\" | /usr/bin/tcpweblog_client.bin 10.0.3.15 9940 /var/log/tcpweblog_cache.log varnish.log 1 - -
 
-// NOTES
-// 	If using SELinux, run the following command to allow the Apache daemon to open network connections:
-// 	setsebool -P httpd_can_network_connect=1
+NOTES:
+	The maximum input line length is 65000 bytes.
+	If using SELinux, run the following command to allow apache daemon to open network connections:
+		setsebool -P httpd_can_network_connect=1
+*/
+
 
 #include <arpa/inet.h>
 #include <netinet/in.h>
@@ -113,7 +119,36 @@ int main(int argc, char *argv[]) {
 
 	// decode arguments
 	if (argc != 8) {
-		perror("This program accept log text lines as input and sends them via TCP to the specified IP:PORT.\nYou must provide 7 arguments:\n - remote_ip_address: the IP address of the listening remote log server;\n - remote_port: the TCP	port of the listening remote log server;\n - local_cache_file: the local cache file to temporarily store the logs when the TCP connection is not available;\n - log_type: the log type:\n  1 : Apache Access Log (per virtual host);\n  2 : Apache Error Log (per virtual host);\n  3 : Apache SSL Access Log (per virtual host);\n  4 : Apache SSL Error Log (per virtual host);\n  5 : Apache Access Log (global config - you must prefix the log format with: \"%h %V\");\n  6 : Varnish NCSA Log (you must prefix the log format with: \"%h %V\");\n  7 : FTP log;\n  8 : PHP log using the tcpweblog php extension;\n - cluster_number: the cluster number;\n - client_ip: the client (local) IP address;\n - client_hostname: the client (local) hostname.\n\nEXAMPLES:\n\n \tAPACHE\n\t\tCustomLog \"| /usr/bin/tcpweblog_client.bin 10.0.3.15 9940 /var/log/tcpweblog_cache.log 1 1 10.0.2.15 xhost\" combined\n\t\tErrorLog \"| /usr/bin/tcpweblog_client.bin 10.0.3.15 9940 /var/log/tcpweblog_cache.log 2 1 10.0.2.15 xhost\"\n\n\tAPACHE SSL\n\t\tCustomLog \"| /usr/bin/tcpweblog_client.bin 10.0.3.15 9940 /var/log/tcpweblog_cache.log 3 1 10.0.2.15 xhost\" combined\n\t\tErrorLog \"| /usr/bin/tcpweblog_client.bin 10.0.3.15 9940 /var/log/tcpweblog_cache.log 4 1 10.0.2.15 xhost\"\n\n\tAPACHE (general CustomLog)\n\t\t# you must prefix the log format with \"%h %V\", for example:\n\t\tLogFormat \"%h %V %{X-Forwarded-For}i %l %u %t \\\"%r\\\" %>s %b \\\"%{Referer}i\\\" \\\"%{User-Agent}i\\\"\" common\n\t\tCustomLog \"| /usr/bin/tcpweblog_client.bin 10.0.3.15 9940 /var/log/tcpweblog_cache.log 5 1 - -\" common\n\tVARNISHNCSA\n\t\tYou must prefix the log format with \"%h %V\", for example:\n\t\tvarnishncsa -F \"%h %V %{X-Forwarded-For}i %l %u %t \\\"%r\\\" %>s %b \\\"%{Referer}i\\\" \\\"%{User-Agent}i\\\"\" | /usr/bin/tcpweblog_client.bin 10.0.3.15 9940 /var/log/tcpweblog_cache.log 6 1 - -\n\n\tIf using SELinux, run the following command to allow the Apache daemon to open network connections:\n\t\tsetsebool -P httpd_can_network_connect=1");
+		perror("\
+This program accept log text lines as input and sends them via TCP to the specified IP:PORT.\n\
+You must provide 7 arguments:\n\
+\t- remote_ip_address: the IP address of the listening remote log server;\n\
+\t- remote_port: the TCP	port of the listening remote log server;\n\
+\t- local_cache_file: the local cache file to temporarily store the logs when the TCP connection is not available;\n\
+\t- logname: the last part of the log file name (i.e.: access.log);\n\
+\t- cluster_number: the cluster number;\n\
+\t- client_ip: the client (local) IP address;\n\
+\t- client_hostname: the client (local) hostname.\n\
+\n\
+EXAMPLES:\n\
+\n\
+\tAPACHE (configuration per virtual host)\n\
+\t\tCustomLog \"| /usr/bin/tcpweblog_client.bin 10.0.3.15 9940 /var/log/tcpweblog_cache.log access.log 1 10.0.2.15 xhost\" combined\n\
+\t\tErrorLog \"| /usr/bin/tcpweblog_client.bin 10.0.3.15 9940 /var/log/tcpweblog_cache.log error.log 1 10.0.2.15 xhost\"\n\
+\n\
+\tAPACHE SSL (configuration per virtual host)\n\
+\t\tCustomLog \"| /usr/bin/tcpweblog_client.bin 10.0.3.15 9940 /var/log/tcpweblog_cache.log ssl.access.log 1 10.0.2.15 xhost\" combined\n\
+\t\tErrorLog \"| /usr/bin/tcpweblog_client.bin 10.0.3.15 9940 /var/log/tcpweblog_cache.log ssl.error.log 1 10.0.2.15 xhost\"\n\
+\n\
+\tAPACHE (general CustomLog)\n\
+\t\t# you must prefix the log format with \"%h %V\", for example:\n\
+\t\tLogFormat \"%h %V %{X-Forwarded-For}i %l %u %t \\\"%r\\\" %>s %b \\\"%{Referer}i\\\" \\\"%{User-Agent}i\\\"\" common\n\t\tCustomLog \"| /usr/bin/tcpweblog_client.bin 10.0.3.15 9940 /var/log/tcpweblog_cache.log access.log 1 - -\" common\n\
+\n\
+\tVARNISHNCSA\n\
+\t\tYou must prefix the log format with \"%h %V\", for example:\n\t\tvarnishncsa -F \"%h %V %{X-Forwarded-For}i %l %u %t \\\"%r\\\" %>s %b \\\"%{Referer}i\\\" \\\"%{User-Agent}i\\\"\" | /usr/bin/tcpweblog_client.bin 10.0.3.15 9940 /var/log/tcpweblog_cache.log varnish.log 1 - -\n\
+\n\
+\tIf using SELinux, run the following command to allow the Apache daemon to open network connections:\n\
+\t\tsetsebool -P httpd_can_network_connect=1");
 		exit(1);
 	}
 
@@ -128,8 +163,8 @@ int main(int argc, char *argv[]) {
 	// the local cache file to temporarily store the logs when the TCP connection is not available
 	char *cachelog = (char *)argv[3];
 
-	// the log type
-	int logtype = atoi(argv[4]);
+	// the file name for log file
+	char *logname = (char *)argv[4];
 
 	// the cluster number
 	int cluster = atoi(argv[5]);
@@ -139,6 +174,7 @@ int main(int argc, char *argv[]) {
 
 	// the local hostname
 	char *clienthost = (char *)argv[7];
+
 
 	// file pointer
 	char *ch = NULL;
@@ -242,7 +278,7 @@ int main(int argc, char *argv[]) {
 			}
 
 			// add a prefix and source info to the log line
-			sprintf(buf, "@@%d\t%d\t%s\t%s\t%s", logtype, cluster, clientip, clienthost, rawbuf);
+			sprintf(buf, "@@%s\t%d\t%s\t%s\t%s", logname, cluster, clientip, clienthost, rawbuf);
 
 			if (s > 0) {
 

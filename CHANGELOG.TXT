@@ -1,3 +1,8 @@
+1.5.0 (2012-07-11)
+	- TCPWebLog-Client parameters were changed to be more flexible.
+	- Required directories are automatically created on the server side.
+	- On the directory names all IP addresses are converted to integers to simplify compatibility between IPv4 and IPv6
+
 1.4.0 (2012-07-06)
 	- PHP log mode was changed
 
