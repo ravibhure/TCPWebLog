@@ -1,3 +1,6 @@
+1.6.0 (2012-07-12)
+	- process_row function was fixed.
+
 1.5.0 (2012-07-11)
 	- TCPWebLog-Client parameters were changed to be more flexible.
 	- Required directories are automatically created on the server side.

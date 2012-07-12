@@ -3,7 +3,7 @@
 // File name   : tcpweblog_server.c
 // Begin       : 2012-02-14
 // Last Update : 2012-07-11
-// Version     : 1.5.0
+// Version     : 1.6.0
 //
 // Website     : https://github.com/fubralimited/TCPWebLog
 //
@@ -213,7 +213,7 @@ void process_row(char *row) {
 	endstr = NULL;
 
 	// check if client IP and host are defined on parameters
-	if ((strlen(clientip) <= 1)) {
+	if ((clientip == NULL) || (strlen(clientip) < 3)) {
 		// try to extract info from log line
 		if (strstr(logname, "ftp") != NULL) {
 			// special case for FTP
@@ -223,7 +223,6 @@ void process_row(char *row) {
 			strcpy(clientident, strtok_r(NULL, " ", &endstr));
 			// compose file name and path
 			sprintf(file, "%s%03d/logs/ident/%s/%s.%s", rootdir, cluster, clientident, clientident, logname);
-
 		} else { // extract IP and host name from log line
 			// You must prefix the log format with "%h %V", for example:
 			// "%h %V %{X-Forwarded-For}i %l %u %t \"%r\" %>s %b \"%{Referer}i\" \"%{User-Agent}i\""
@@ -239,7 +238,6 @@ void process_row(char *row) {
 			// compose file name and path
 			sprintf(file, "%s%03d/logs/ip/%s/%s.%s", rootdir, cluster, clientip, clienthost, logname);
 		}
-
 	} else {
 		// compose file name and path
 		sprintf(file, "%s%03d/logs/ip/%s/%s.%s", rootdir, cluster, clientip, clienthost, logname);
