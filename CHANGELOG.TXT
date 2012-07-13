@@ -1,3 +1,6 @@
+1.7.0 (2012-07-13)
+	- A memory problem was fixed on client.
+
 1.6.0 (2012-07-12)
 	- process_row function was fixed.
 

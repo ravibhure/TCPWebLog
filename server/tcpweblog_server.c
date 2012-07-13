@@ -3,7 +3,7 @@
 // File name   : tcpweblog_server.c
 // Begin       : 2012-02-14
 // Last Update : 2012-07-11
-// Version     : 1.6.0
+// Version     : 1.7.0
 //
 // Website     : https://github.com/fubralimited/TCPWebLog
 //

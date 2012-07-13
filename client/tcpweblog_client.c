@@ -2,8 +2,8 @@
 //=============================================================================+
 // File name   : tcpweblog_client.c
 // Begin       : 2012-02-28
-// Last Update : 2012-07-11
-// Version     : 1.6.0
+// Last Update : 2012-07-13
+// Version     : 1.7.0
 //
 // Website     : https://github.com/fubralimited/TCPWebLog
 //
@@ -183,7 +183,7 @@ EXAMPLES:\n\
 	int optval = 1;
 
 	// buffer used to read input data
-	char *rawbuf = NULL;
+	char *rawbuf = (char *)malloc(65536);
 
 	// length of the raw buffer
 	size_t rblen = 0;
@@ -242,7 +242,6 @@ EXAMPLES:\n\
 	// forever
 	while (loopcontrol < 2) {
 
-		rawbuf = NULL;
 		rblen = 0;
 
 		// read one line at time from stdin
