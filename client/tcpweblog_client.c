@@ -183,7 +183,7 @@ EXAMPLES:\n\
 	int optval = 1;
 
 	// buffer used to read input data
-	char *rawbuf = (char *)malloc(65536);
+	char *rawbuf = (char *)malloc(BUFLEN);
 
 	// length of the raw buffer
 	size_t rblen = 0;
