@@ -2,8 +2,8 @@
 //=============================================================================+
 // File name   : tcpweblog_client.c
 // Begin       : 2012-02-28
-// Last Update : 2012-07-13
-// Version     : 1.7.0
+// Last Update : 2012-07-16
+// Version     : 1.8.0
 //
 // Website     : https://github.com/fubralimited/TCPWebLog
 //
@@ -97,12 +97,12 @@ NOTES:
  * @param s string to append on log.
  */
 void appendlog(const char *s, const char *file) {
-	FILE *fp = NULL;
+	FILE *fpal = NULL;
 	int ret = EOF;
-	fp = fopen(file, "a");
-	if (fp != NULL) {
-		ret = fputs(s, fp);
-		fclose(fp);
+	fpal = fopen(file, "a");
+	if (fpal != NULL) {
+		ret = fputs(s, fpal);
+		fclose(fpal);
 	}
 	if (ret == EOF) {
 		// output an error message
@@ -175,15 +175,11 @@ EXAMPLES:\n\
 	// the local hostname
 	char *clienthost = (char *)argv[7];
 
-
-	// file pointer
-	char *ch = NULL;
-
 	// option for SOL_SOCKET
 	int optval = 1;
 
 	// buffer used to read input data
-	char *rawbuf = (char *)malloc(BUFLEN);
+	char *rawbuf = NULL;
 
 	// length of the raw buffer
 	size_t rblen = 0;
@@ -242,6 +238,7 @@ EXAMPLES:\n\
 	// forever
 	while (loopcontrol < 2) {
 
+		rawbuf = NULL;
 		rblen = 0;
 
 		// read one line at time from stdin
@@ -295,9 +292,7 @@ EXAMPLES:\n\
 				} else { // the line has been successfully sent
 
 					// try to send log files on cache (if any)
-					fp = fopen(cachelog, "rwb+");
-
-					if (fp != NULL) {
+					if ((fp = fopen(cachelog, "rwb+")) != NULL) {
 						// get starting line position
 						cpos = ftell(fp);
 						cerr = 0;
@@ -335,15 +330,17 @@ EXAMPLES:\n\
 							remove(cachelog);
 						}
 						fclose(fp);
+					} else {
+						//DEBUG clearerr(fp);
 					}
-
 				} // end of else - when sending is working
 
 			} else { // we do not have a valid socket
-
 				// log the file on local cache
 				appendlog(buf, cachelog);
 			}
+
+			free(rawbuf);
 
 		} // end scan line
 
@@ -352,11 +349,9 @@ EXAMPLES:\n\
 	} // end of while (1)
 
 	// free resources
-	close(s);
-	free(rawbuf);
-	free(ch);
-	free(ipaddress);
-	free(cachelog);
+	if (s > 0) {
+		close(s);
+	}
 
 	// close program and return 0
 	return 0;
