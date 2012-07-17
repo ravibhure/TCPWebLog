@@ -1,7 +1,7 @@
 %define release 1
 
 Name:           tcpweblog_server
-Version:        1.8.0
+Version:        1.9.0
 Release:        %{release}%{?dist}
 Summary:        TCPWebLog-Server collects logs data via TCP from TCPWebLog-Client
 

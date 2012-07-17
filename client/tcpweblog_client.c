@@ -3,7 +3,7 @@
 // File name   : tcpweblog_client.c
 // Begin       : 2012-02-28
 // Last Update : 2012-07-16
-// Version     : 1.8.0
+// Version     : 1.9.0
 //
 // Website     : https://github.com/fubralimited/TCPWebLog
 //
@@ -242,7 +242,7 @@ EXAMPLES:\n\
 		rblen = 0;
 
 		// read one line at time from stdin
-		if ((glen = getline(&rawbuf, &rblen, stdin)) != -1) {
+		if (((glen = getline(&rawbuf, &rblen, stdin)) > 3) && (glen < BUFLEN)) {
 
 			loopcontrol = 0;
 
@@ -331,7 +331,7 @@ EXAMPLES:\n\
 						}
 						fclose(fp);
 					} else {
-						//DEBUG clearerr(fp);
+						clearerr(fp);
 					}
 				} // end of else - when sending is working
 
@@ -342,11 +342,11 @@ EXAMPLES:\n\
 
 			free(rawbuf);
 
-		} // end scan line
+		} // end getline
 
 		++loopcontrol;
 
-	} // end of while (1)
+	} // end of while
 
 	// free resources
 	if (s > 0) {
