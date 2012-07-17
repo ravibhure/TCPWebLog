@@ -331,7 +331,9 @@ EXAMPLES:\n\
 						}
 						fclose(fp);
 					} else {
-						clearerr(fp);
+						if (fp != NULL) {
+							clearerr(fp);
+						}
 					}
 				} // end of else - when sending is working
 
