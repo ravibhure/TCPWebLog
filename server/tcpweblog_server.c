@@ -394,7 +394,7 @@ FOR EXAMPLE:\n\
 	int opttrue = 1;
 	
 	// false option for setsockopt
-	int optfalse = 0;
+	//int optfalse = 0;
 
 	// structure containing an Internet socket address: an address family (always AF_INET for our purposes), a port number, an IP address
 	// si_server defines the socket where the server will listen.
@@ -432,7 +432,7 @@ FOR EXAMPLE:\n\
 	}
 
 	// set socket to listen on IPv6 and IPv4
-	if (setsockopt(s, IPPROTO_IPV6, IPV6_V6ONLY, &optfalse, sizeof(optfalse)) == -1) {
+	if (setsockopt(s, IPPROTO_IPV6, IPV6_V6ONLY, &opttrue, sizeof(opttrue)) == -1) {
 		diep("TCPWebLog-Server (setsockopt : IPPROTO_IPV6 - IPV6_V6ONLY)");
 	}
 

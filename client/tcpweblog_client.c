@@ -179,7 +179,7 @@ EXAMPLES:\n\
 	int opttrue = 1;
 	
 	// false option for setsockopt
-	int optfalse = 0;
+	//int optfalse = 0;
 
 	// buffer used to read input data
 	char *rawbuf = NULL;
@@ -259,7 +259,7 @@ EXAMPLES:\n\
 					perror("TCPWebLog-Client (socket)");
 				} else {
 					// set socket to listen on IPv6 and IPv4
-					if (setsockopt(s, IPPROTO_IPV6, IPV6_V6ONLY, &optfalse, sizeof(optfalse)) == -1) {
+					if (setsockopt(s, IPPROTO_IPV6, IPV6_V6ONLY, &opttrue, sizeof(opttrue)) == -1) {
 						perror("TCPWebLog-Client (setsockopt : IPPROTO_IPV6 - IPV6_V6ONLY)");
 					}
 					// set SO_REUSEADDR on socket to true (1):
