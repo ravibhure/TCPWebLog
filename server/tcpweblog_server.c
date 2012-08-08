@@ -2,8 +2,8 @@
 //=============================================================================+
 // File name   : tcpweblog_server.c
 // Begin       : 2012-02-14
-// Last Update : 2012-07-11
-// Version     : 1.9.0
+// Last Update : 2012-08-08
+// Version     : 2.0.0
 //
 // Website     : https://github.com/fubralimited/TCPWebLog
 //
@@ -390,8 +390,11 @@ FOR EXAMPLE:\n\
 	// arguments be passes on thread
 	targs cargs[maxconn];
 
-	// option for SOL_SOCKET
-	int optval = 1;
+	// true option for setsockopt
+	int opttrue = 1;
+	
+	// false option for setsockopt
+	int optfalse = 0;
 
 	// structure containing an Internet socket address: an address family (always AF_INET for our purposes), a port number, an IP address
 	// si_server defines the socket where the server will listen.
@@ -428,13 +431,13 @@ FOR EXAMPLE:\n\
 		diep("TCPWebLog-Server (socket)");
 	}
 
-	// set socket to listen only IPv6
-	if (setsockopt(s, IPPROTO_IPV6, IPV6_V6ONLY, &optval, sizeof(optval)) == -1) {
+	// set socket to listen on IPv6 and IPv4
+	if (setsockopt(s, IPPROTO_IPV6, IPV6_V6ONLY, &optfalse, sizeof(optfalse)) == -1) {
 		diep("TCPWebLog-Server (setsockopt : IPPROTO_IPV6 - IPV6_V6ONLY)");
 	}
 
 	// set SO_REUSEADDR on socket to true (1):
-	if (setsockopt(s, SOL_SOCKET, SO_REUSEADDR, &optval, sizeof(optval)) == -1) {
+	if (setsockopt(s, SOL_SOCKET, SO_REUSEADDR, &opttrue, sizeof(opttrue)) == -1) {
 		diep("TCPWebLog-Server (setsockopt : SOL_SOCKET - SO_REUSEADDR)");
 	}
 

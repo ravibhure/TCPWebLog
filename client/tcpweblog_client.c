@@ -2,8 +2,8 @@
 //=============================================================================+
 // File name   : tcpweblog_client.c
 // Begin       : 2012-02-28
-// Last Update : 2012-07-16
-// Version     : 1.9.0
+// Last Update : 2012-08-08
+// Version     : 2.0.0
 //
 // Website     : https://github.com/fubralimited/TCPWebLog
 //
@@ -175,8 +175,11 @@ EXAMPLES:\n\
 	// the local hostname
 	char *clienthost = (char *)argv[7];
 
-	// option for SOL_SOCKET
-	int optval = 1;
+	// true option for setsockopt
+	int opttrue = 1;
+	
+	// false option for setsockopt
+	int optfalse = 0;
 
 	// buffer used to read input data
 	char *rawbuf = NULL;
@@ -255,12 +258,12 @@ EXAMPLES:\n\
 					// print an error message
 					perror("TCPWebLog-Client (socket)");
 				} else {
-					// set socket to listen only IPv6
-					if (setsockopt(s, IPPROTO_IPV6, IPV6_V6ONLY, &optval, sizeof(optval)) == -1) {
+					// set socket to listen on IPv6 and IPv4
+					if (setsockopt(s, IPPROTO_IPV6, IPV6_V6ONLY, &optfalse, sizeof(optfalse)) == -1) {
 						perror("TCPWebLog-Client (setsockopt : IPPROTO_IPV6 - IPV6_V6ONLY)");
 					}
 					// set SO_REUSEADDR on socket to true (1):
-					if (setsockopt(s, SOL_SOCKET, SO_REUSEADDR, &optval, sizeof(optval)) == -1) {
+					if (setsockopt(s, SOL_SOCKET, SO_REUSEADDR, &opttrue, sizeof(opttrue)) == -1) {
 						perror("TCPWebLog-Client (setsockopt : SOL_SOCKET - SO_REUSEADDR)");
 					}
 					// establish a connection to the server

@@ -3,9 +3,9 @@ TCPWebLog - README
 
 + Name: TCPWebLog
 
-+ Version: 1.9.0
++ Version: 2.0.0
 
-+ Release date: 2012-07-11
++ Release date: 2012-08-08
 
 + Author: Nicola Asuni
 
@@ -61,6 +61,8 @@ HOW-TO CREATE TCPWebLog RPMs
 ------------------------------
 
 This is a short hands-on tutorial on creating RPM files for the TCPWebLog project.
+For an automatic building script for CentOS and the latest RPM packages please check the CatN Repository: https://github.com/fubralimited/CatN-Repo
+
 NOTE: The sever configuration for TCPWebLog-Client and TCPWebLog-Server may be different, so this process must be executed in different environments.
 
 
@@ -130,7 +132,7 @@ INSTALL SERVERUSAGE SERVER:
 
 As root install the TCPWebLog-Server RPM file:
 
-	# rpm -i tcpweblog_server-1.9.0-1.el6.$(uname -m).rpm 
+	# rpm -i tcpweblog_server-2.0.0-1.el6.$(uname -m).rpm 
 	
 Configure the TCPWebLog-Server
 
@@ -149,7 +151,7 @@ INSTALL SERVERUSAGE CLIENT:
 
 As root install the SystemTap runtime and TCPWebLog-Client RPM files:
 
-	# rpm -i tcpweblog_client-1.9.0-1.el6.$(uname -m).rpm
+	# rpm -i tcpweblog_client-2.0.0-1.el6.$(uname -m).rpm
 	
 Configure the logs
 

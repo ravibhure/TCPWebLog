@@ -1,3 +1,6 @@
+2.0.0 (2012-08-08)
+	- IPV6_V6ONLY option was set to false to accept IPv4 connections.
+
 1.9.0 (2012-07-17)
 	- Minor improvements.
 
