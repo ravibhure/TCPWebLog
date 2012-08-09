@@ -1,3 +1,6 @@
+3.0.0 (2012-08-09)
+	- Dual stack support for both IPv4 and IPv6 was added.
+
 2.0.0 (2012-08-08)
 	- Documentation was updated.
 

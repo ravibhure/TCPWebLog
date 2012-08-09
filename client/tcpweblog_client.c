@@ -2,8 +2,8 @@
 //=============================================================================+
 // File name   : tcpweblog_client.c
 // Begin       : 2012-02-28
-// Last Update : 2012-08-08
-// Version     : 2.0.0
+// Last Update : 2012-08-09
+// Version     : 3.0.0
 //
 // Website     : https://github.com/fubralimited/TCPWebLog
 //
@@ -80,6 +80,8 @@ NOTES:
 #include <string.h>
 #include <sys/types.h>
 #include <sys/socket.h>
+#include <netdb.h>
+#include <errno.h>
 #include <unistd.h>
 
 /**
@@ -158,7 +160,7 @@ EXAMPLES:\n\
 	char *ipaddress = (char *)argv[1];
 
 	// the TCP	port of the listening remote log server
-	int port = atoi(argv[2]);
+	char *port = (char *)argv[2];
 
 	// the local cache file to temporarily store the logs when the TCP connection is not available
 	char *cachelog = (char *)argv[3];
@@ -174,12 +176,6 @@ EXAMPLES:\n\
 
 	// the local hostname
 	char *clienthost = (char *)argv[7];
-
-	// true option for setsockopt
-	int opttrue = 1;
-	
-	// false option for setsockopt
-	//int optfalse = 0;
 
 	// buffer used to read input data
 	char *rawbuf = NULL;
@@ -214,26 +210,24 @@ EXAMPLES:\n\
 	// socket
 	int s = -1;
 
-	// structure containing an Internet socket address for server: an address family (always AF_INET for our purposes), a port number, an IP address
-	struct sockaddr_in6 si_server;
+	// true option for setsockopt
+	int opttrue = 1;
 
-	// size of si_server
-	int slen = sizeof(si_server);
+	// structures to handle address information
+	struct addrinfo hints, *res, *aip;
 
-	// use IPv6 internet address
-	si_server.sin6_family = AF_INET6;
+	// initialize structure
+	memset(&hints, 0, sizeof(hints));
 
-	// initialize the si_server structure filling it with binary zeros
-	memset((char *) &si_server, 0, slen);
+	// set parameters
+	hints.ai_family = AF_UNSPEC;
+	hints.ai_socktype = SOCK_STREAM;
 
-	// use IPv6 internet address
-	si_server.sin6_family = AF_INET6;
-
-	// set the IP address we want to bind to.
-	inet_pton(si_server.sin6_family, ipaddress, &(si_server.sin6_addr));
-
-	// set the port to listen to, and ensure the correct byte order
-	si_server.sin6_port = htons(port);
+	// get address info
+	if (getaddrinfo(ipaddress, port, &hints, &res) != 0) {
+		perror("TCPWebLog-Client (getaddrinfo)");
+		exit(1);
+	}
 
 	// check if the program is in loop mode
 	int loopcontrol = 0;
@@ -251,29 +245,57 @@ EXAMPLES:\n\
 
 			// try to open a TCP connection if not already open
 			if (s <= 0) {
-				// start of block of data : create a network socket.
-				// AF_INET says that it will be an Internet socket.
-				// SOCK_STREAM Provides sequenced, reliable, two-way, connection-based byte streams.
-				if ((s = socket(si_server.sin6_family, SOCK_STREAM, 0)) == -1) {
-					// print an error message
-					perror("TCPWebLog-Client (socket)");
-				} else {
-					// set socket to listen on IPv6 and IPv4
-					if (setsockopt(s, IPPROTO_IPV6, IPV6_V6ONLY, &opttrue, sizeof(opttrue)) == -1) {
-						perror("TCPWebLog-Client (setsockopt : IPPROTO_IPV6 - IPV6_V6ONLY)");
-					}
-					// set SO_REUSEADDR on socket to true (1):
-					if (setsockopt(s, SOL_SOCKET, SO_REUSEADDR, &opttrue, sizeof(opttrue)) == -1) {
-						perror("TCPWebLog-Client (setsockopt : SOL_SOCKET - SO_REUSEADDR)");
-					}
-					// establish a connection to the server
-					if (connect(s, &si_server, slen) == -1) {
-						close(s);
-						s = -1;
-						// print an error message
-						perror("TCPWebLog-Client (connect)");
+
+				// for each socket type
+				for (aip = res; aip; aip = aip->ai_next) {
+
+					// try to create a network socket.
+					s = socket(aip->ai_family, aip->ai_socktype, aip->ai_protocol);
+
+					if (s < 0) {
+						switch (errno) {
+							case EAFNOSUPPORT:
+							case EPROTONOSUPPORT: {
+								// skip the errors until the last address family
+								if (aip->ai_next) {
+									continue;
+								} else {
+									// handle unknown protocol errors
+									perror("TCPWebLog-Client (socket)");
+									break;
+								}
+							}
+							default: {
+								// handle other socket errors
+								perror("TCPWebLog-Client (socket)");
+								break;
+							}
+						}
+					} else {
+
+						if (aip->ai_family == AF_INET6) {
+							// set socket to listen only IPv6
+							if (setsockopt(s, IPPROTO_IPV6, IPV6_V6ONLY, &opttrue, sizeof(opttrue)) == -1) {
+								perror("TCPWebLog-Client (setsockopt : IPPROTO_IPV6 - IPV6_V6ONLY)");
+								continue;
+							}
+						}
+						// make socket reusable
+						if (setsockopt(s, SOL_SOCKET, SO_REUSEADDR, &opttrue, sizeof(opttrue)) == -1) {
+							perror("TCPWebLog-Client (setsockopt : SOL_SOCKET - SO_REUSEADDR)");
+							continue;
+						}
+
+						// establish a connection to the server
+						if (connect(s, aip->ai_addr, aip->ai_addrlen) == -1) {
+							close(s);
+							s = -1;
+							// print an error message
+							perror("TCPWebLog-Client (connect)");
+						}
 					}
 				}
+
 			}
 
 			// add a prefix and source info to the log line

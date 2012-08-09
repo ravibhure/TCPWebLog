@@ -2,8 +2,8 @@
 //=============================================================================+
 // File name   : tcpweblog_server.c
 // Begin       : 2012-02-14
-// Last Update : 2012-08-08
-// Version     : 2.0.0
+// Last Update : 2012-08-09
+// Version     : 3.0.0
 //
 // Website     : https://github.com/fubralimited/TCPWebLog
 //
@@ -50,7 +50,7 @@ TO COMPILE (requires sqlite-devel):
 
 USAGE EXAMPLES:
 	./tcpweblog_server.bin PORT MAX_CONNECTIONS ROOT_DIR
-	./tcpweblog_server.bin 9940 100 "/cluster/"
+	./tcpweblog_server.bin \"9940\" 100 "/cluster/"
 
 NOTES:
 	You must implement some firewall rules in your server to avoid receiving TCP messages from unauthorized clients.
@@ -66,7 +66,10 @@ NOTES:
 #include <sys/stat.h>
 #include <sys/types.h>
 #include <sys/socket.h>
+#include <netdb.h>
+#include <errno.h>
 #include <unistd.h>
+#include <fcntl.h>
 
 // DEBUG OPTION TO PRINT EXECUTION TIME
 //#define _DEBUG
@@ -85,6 +88,11 @@ NOTES:
  * Read size for TCP buffer
  */
 #define READBUFLEN 65534
+
+/**
+ * Number of sockets (IPv4 + IPv6)
+ */
+#define MAXSOCK 2
 
 /**
  * Root directory used to store log files
@@ -366,11 +374,11 @@ int main(int argc, char *argv[]) {
 This program listen on specified IP:PORT for incoming TCP messages from tcpweblog_client.bin, and split them on local filesystem by IP address and type.\n\
 You must provide 3 arguments: port, max_conenctions, root_directory \n\
 FOR EXAMPLE:\n\
-./tcpweblog_server.bin 9940 100 \"/cluster/\"");
+./tcpweblog_server.bin \"9940\" 100 \"/cluster/\"");
 	}
 
 	// listening TCP port
-	int port = atoi(argv[1]);
+	char *port = (char *)argv[1];
 
 	// max number of connections
 	int maxconn = atoi(argv[2]);
@@ -392,95 +400,185 @@ FOR EXAMPLE:\n\
 
 	// true option for setsockopt
 	int opttrue = 1;
-	
-	// false option for setsockopt
-	//int optfalse = 0;
 
-	// structure containing an Internet socket address: an address family (always AF_INET for our purposes), a port number, an IP address
-	// si_server defines the socket where the server will listen.
-	struct sockaddr_in6 si_server;
+
+	// file descriptor sets for the select function
+	fd_set mset, wset;
+
+	// initialize descriptor for select
+    FD_ZERO(&mset);
+
+	// structures to handle address information
+	struct addrinfo hints, *res, *aip;
 
 	// defines the socket at the other end of the link (that is, the client)
-	struct sockaddr_in6 si_client;
+	struct sockaddr_storage si_client;
 
 	// size of si_client
-	int slen = sizeof(si_client);
+	socklen_t slen = sizeof(si_client);
 
-	// socket
-	int s = -1;
+	// sockets array
+	int sockfd[MAXSOCK];
+
+	// max socket number
+	int maxsockfd = 0;
+
+	// socket number
+	int nsock=0;
+
+	// socket options
+	int opts=-1;
 
 	// new socket
 	int ns = -1;
 
-	// initialize the si_server structure filling it with binary zeros
-	memset((char *) &si_server, 0, slen);
+	// initialize structure
+	memset(&hints, 0, sizeof(hints));
 
-	// use internet address
-	si_server.sin6_family = AF_INET6;
+	// set parameters
+	hints.ai_flags = AI_PASSIVE;
+	hints.ai_family = AF_UNSPEC;
+	hints.ai_socktype = SOCK_STREAM;
 
-	// listen to any IP address
-	si_server.sin6_addr = in6addr_any;
-
-	// set the port to listen to, and ensure the correct byte order
-	si_server.sin6_port = htons(port);
-
-	// Create a network socket.
-	// AF_INET says that it will be an Internet socket.
-	// SOCK_STREAM Provides sequenced, reliable, two-way, connection-based byte streams.
-	if ((s = socket(si_server.sin6_family, SOCK_STREAM, 0)) == -1) {
-		diep("TCPWebLog-Server (socket)");
+	// get address info
+	if (getaddrinfo(NULL, port, &hints, &res) != 0) {
+		diep("TCPWebLog-Server (getaddrinfo)");
 	}
 
-	// set socket to listen on IPv6 and IPv4
-	if (setsockopt(s, IPPROTO_IPV6, IPV6_V6ONLY, &opttrue, sizeof(opttrue)) == -1) {
-		diep("TCPWebLog-Server (setsockopt : IPPROTO_IPV6 - IPV6_V6ONLY)");
-	}
+	// for each socket type
+	for (aip = res; (aip && (nsock < MAXSOCK)); aip = aip->ai_next) {
 
-	// set SO_REUSEADDR on socket to true (1):
-	if (setsockopt(s, SOL_SOCKET, SO_REUSEADDR, &opttrue, sizeof(opttrue)) == -1) {
-		diep("TCPWebLog-Server (setsockopt : SOL_SOCKET - SO_REUSEADDR)");
-	}
+		// try to create a network socket.
+		sockfd[nsock] = socket(aip->ai_family, aip->ai_socktype, aip->ai_protocol);
 
-	// bind the socket s to the address in si_server.
-	if (bind(s, (struct sockaddr *) &si_server, slen) == -1) {
-		diep("TCPWebLog-Server (bind)");
-	}
-
-	// listen for connections
-	listen(s, maxconn);
-
-	// forever
-	while (1)  {
-
-		// accept a connection on a socket
-		if ((ns = accept(s, (struct sockaddr *) &si_client, &slen)) == -1) {
-			// print an error message
-			perror("TCPWebLog-Server (accept)");
-			// retry after 1 second
-			sleep(1);
+		if (sockfd[nsock] < 0) {
+			switch (errno) {
+				case EAFNOSUPPORT:
+				case EPROTONOSUPPORT: {
+					// skip the errors until the last address family
+					if (aip->ai_next) {
+						continue;
+					} else {
+						// handle unknown protocol errors
+						diep("TCPWebLog-Server (socket)");
+						break;
+					}
+				}
+				default: {
+					// handle other socket errors
+					diep("TCPWebLog-Server (socket)");
+					break;
+				}
+			}
 		} else {
-
-			// prepare data for the thread
-			cargs[tn].socket_conn = ns;
-
-			// handle each connection on a separate thread
-			pthread_attr_init(&tattr);
-			pthread_attr_setdetachstate(&tattr, PTHREAD_CREATE_DETACHED);
-			pthread_create(&tid, &tattr, connection_thread, (void *)&cargs[tn]);
-
-			tn++;
-
-			if (tn >= maxconn) {
-				// reset connection number
-				tn = 0;
+			if (aip->ai_family == AF_INET6) {
+				// set socket to listen only IPv6
+				if (setsockopt(sockfd[nsock], IPPROTO_IPV6, IPV6_V6ONLY, &opttrue, sizeof(opttrue)) == -1) {
+					perror("TCPWebLog-Server (setsockopt : IPPROTO_IPV6 - IPV6_V6ONLY)");
+					continue;
+				}
+			}
+			// make socket reusable
+			if (setsockopt(sockfd[nsock], SOL_SOCKET, SO_REUSEADDR, &opttrue, sizeof(opttrue)) == -1) {
+				perror("TCPWebLog-Server (setsockopt : SOL_SOCKET - SO_REUSEADDR)");
+				continue;
+			}
+			// make socket non-blocking
+			opts = fcntl(sockfd[nsock], F_GETFL);
+			if (opts < 0) {
+				perror("TCPWebLog-Server (fcntl(F_GETFL))");
+				continue;
+			}
+			opts = (opts | O_NONBLOCK);
+			if (fcntl(sockfd[nsock], F_SETFL, opts) < 0) {
+				perror("TCPWebLog-Server (fcntl(F_SETFL))");
+				continue;
+			}
+			// bind the socket to the address
+			if (bind(sockfd[nsock], aip->ai_addr, aip->ai_addrlen) < 0) {
+				close(sockfd[nsock]);
+				continue;
+			}
+			// listen for incoming connections on each stack
+			if (listen(sockfd[nsock], maxconn) < 0) {
+				close(sockfd[nsock]);
+				continue;
+			} else {
+				// set select for this socket
+				FD_SET(sockfd[nsock], &mset);
+				if (sockfd[nsock] > maxsockfd) {
+					// set the maximum socket number
+					maxsockfd = sockfd[nsock];
+				}
 			}
 		}
+		// move to next socket
+		nsock++;
+	}
+	// free resource
+	freeaddrinfo(res);
 
-	} // end of for loop
+	// forever
+	while (1) {
 
-	// close socket
-	if (s > 0) {
-		close(s);
+		// copy master sd_set to the working sd_set
+		memcpy(&wset, &mset, sizeof(mset));
+
+		// call select() to wait for connection from all defined sockets
+		if (select((maxsockfd + 1), &wset, NULL, NULL, NULL) < 0) {
+			if (errno == EINTR) {
+				// ignore this error and go back
+				continue;
+			}
+			diep("TCPWebLog-Server (select)");
+		}
+
+		// or each socket
+		for (nsock = 0; nsock < MAXSOCK; nsock++) {
+			// if we have a connection on the socket
+			if (FD_ISSET(sockfd[nsock], &wset)) {
+
+				// accept a connection on a socket
+				if ((ns = accept(sockfd[nsock], (struct sockaddr *) &si_client, &slen)) == -1) {
+					// print an error message
+					perror("TCPWebLog-Server (accept)");
+					continue;
+				} else {
+					// make socket blocking
+					opts = fcntl(sockfd[nsock], F_GETFL);
+					if (opts < 0) {
+						perror("TCPWebLog-Server (accept() > fcntl(F_GETFL))");
+						continue;
+					}
+					opts = (opts & (~O_NONBLOCK));
+					if (fcntl(sockfd[nsock], F_SETFL, opts) < 0) {
+						perror("TCPWebLog-Server (accept() > fcntl(F_SETFL))");
+						continue;
+					}
+
+					// prepare data for the thread
+					cargs[tn].socket_conn = ns;
+
+					// handle each connection on a separate thread
+					pthread_attr_init(&tattr);
+					pthread_attr_setdetachstate(&tattr, PTHREAD_CREATE_DETACHED);
+					pthread_create(&tid, &tattr, connection_thread, (void *)&cargs[tn]);
+
+					// increase thread number
+					tn++;
+
+					if (tn >= maxconn) {
+						// reset connection number
+						tn = 0;
+					}
+				}
+			}
+		}
+	} // end of while loop
+
+	// close connections
+	for (nsock = 0; nsock < MAXSOCK; nsock++) {
+		close(sockfd[nsock]);
 	}
 
 	// close program and return 0
