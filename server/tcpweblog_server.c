@@ -50,7 +50,7 @@ TO COMPILE (requires sqlite-devel):
 
 USAGE EXAMPLES:
 	./tcpweblog_server.bin PORT MAX_CONNECTIONS ROOT_DIR
-	./tcpweblog_server.bin \"9940\" 100 "/cluster/"
+	./tcpweblog_server.bin 9940 100 "/cluster/"
 
 NOTES:
 	You must implement some firewall rules in your server to avoid receiving TCP messages from unauthorized clients.
@@ -374,7 +374,7 @@ int main(int argc, char *argv[]) {
 This program listen on specified IP:PORT for incoming TCP messages from tcpweblog_client.bin, and split them on local filesystem by IP address and type.\n\
 You must provide 3 arguments: port, max_conenctions, root_directory \n\
 FOR EXAMPLE:\n\
-./tcpweblog_server.bin \"9940\" 100 \"/cluster/\"");
+./tcpweblog_server.bin 9940 100 \"/cluster/\"");
 	}
 
 	// listening TCP port
@@ -533,7 +533,7 @@ FOR EXAMPLE:\n\
 			diep("TCPWebLog-Server (select)");
 		}
 
-		// or each socket
+		// for each socket
 		for (nsock = 0; nsock < MAXSOCK; nsock++) {
 			// if we have a connection on the socket
 			if (FD_ISSET(sockfd[nsock], &wset)) {
