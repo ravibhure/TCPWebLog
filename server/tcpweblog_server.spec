@@ -1,7 +1,7 @@
 %define release 1
 
 Name:           tcpweblog_server
-Version:        3.0.0
+Version:        3.1.0
 Release:        %{release}%{?dist}
 Summary:        TCPWebLog-Server collects logs data via TCP from TCPWebLog-Client
 
@@ -12,6 +12,10 @@ Source0:        %{name}-%{version}.tar.gz
 BuildRoot:      %{_tmppath}/%{name}-%{version}-%{release}-root-%(%{__id_u} -n)
 
 BuildRequires:  elfutils-devel
+
+Requires(preun): chkconfig
+Requires(preun): initscripts
+Requires(postun): initscripts
 
 %description
 The TCPWebLog-Server is a program to collect and process log data sent by
@@ -38,11 +42,28 @@ make clean
 %defattr(-,root,root,-)
 %doc README LICENSE
 %{_bindir}/tcpweblog_server.bin
-%{_sysconfdir}/tcpweblog_server.conf
+%config(noreplace) %{_sysconfdir}/tcpweblog_server.conf
 %{_initrddir}/tcpweblog_server
 %{_mandir}/man8/tcpweblog_server.8.gz
 
+%preun
+if [ $1 -eq 0 ] ; then
+	# uninstall: stop service
+	/sbin/service tcpweblog_server stop >/dev/null 2>&1
+	/sbin/chkconfig --del tcpweblog_server
+fi
+
+%postun
+if [ $1 -eq 1 ] ; then
+	# upgrade: restart service if was running
+	/sbin/service tcpweblog_server condrestart >/dev/null 2>&1 || :
+fi
+
 %changelog
+* Thu Aug 21 2012 Nicola Asuni
+- Added %config(noreplace)
+- Added preun and postun sections
+
 * Mon May 28 2012 Nicola Asuni
 - First version.
 

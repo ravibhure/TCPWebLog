@@ -1,3 +1,7 @@
+3.1.0 (2012-08-21)
+	- RPM spec files were changed to avoid overriding the configuration and database files.
+	- Init scripts were improved.
+
 3.0.0 (2012-08-09)
 	- Dual stack support for both IPv4 and IPv6 was added.
 
