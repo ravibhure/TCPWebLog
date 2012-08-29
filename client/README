@@ -3,9 +3,9 @@ TCPWebLog-Client - README
 
 Name: TCPWebLog-Client
 
-Version: 3.1.0
+Version: 3.2.0
 
-Release date: 2012-08-21
+Release date: 2012-08-29
 
 Author: Nicola Asuni (nicola@fubra.com)
 
@@ -95,13 +95,13 @@ This folder contains the source code of TCPWebLog-Client:
 		ErrorLog \"| /usr/bin/tcpweblog_client.bin 10.0.3.15 9940 /var/log/tcpweblog_cache.log ssl.error.log 1 10.0.2.15 xhost\"
 
 	APACHE (general CustomLog)
-		# you must prefix the log format with \"%h %V\", for example:
-		LogFormat \"%h %V %{X-Forwarded-For}i %l %u %t \\\"%r\\\" %>s %b \\\"%{Referer}i\\\" \\\"%{User-Agent}i\\\"\" common
+		# you must prefix the log format with \"%A %V\", for example:
+		LogFormat \"%A %V %{X-Forwarded-For}i %l %u %t \\\"%r\\\" %>s %b \\\"%{Referer}i\\\" \\\"%{User-Agent}i\\\"\" common
 		CustomLog \"| /usr/bin/tcpweblog_client.bin 10.0.3.15 9940 /var/log/tcpweblog_cache.log access.log 1 - -\" common
 
 	VARNISHNCSA
-		You must prefix the log format with \"%h %V\", for example:
-		varnishncsa -F \"%h %V %{X-Forwarded-For}i %l %u %t \\\"%r\\\" %>s %b \\\"%{Referer}i\\\" \\\"%{User-Agent}i\\\"\" | /usr/bin/tcpweblog_client.bin 10.0.3.15 9940 /var/log/tcpweblog_cache.log varnish.log 1 - -
+		You must prefix the log format with \"%A %V\", for example:
+		varnishncsa -F \"%A %V %{X-Forwarded-For}i %l %u %t \\\"%r\\\" %>s %b \\\"%{Referer}i\\\" \\\"%{User-Agent}i\\\"\" | /usr/bin/tcpweblog_client.bin 10.0.3.15 9940 /var/log/tcpweblog_cache.log varnish.log 1 - -
 
 
 

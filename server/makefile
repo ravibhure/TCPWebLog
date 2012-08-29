@@ -3,7 +3,7 @@
 # File name   : makefile
 # Begin       : 2012-04-16
 # Last Update : 2012-05-28
-# Version     : 3.1.0
+# Version     : 3.2.0
 #
 # Website     : https://github.com/fubralimited/TCPWebLog
 #

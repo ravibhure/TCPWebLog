@@ -3,7 +3,7 @@
 // File name   : tcpweblog_server.c
 // Begin       : 2012-02-14
 // Last Update : 2012-08-09
-// Version     : 3.1.0
+// Version     : 3.2.0
 //
 // Website     : https://github.com/fubralimited/TCPWebLog
 //
@@ -75,8 +75,8 @@ NOTES:
 //#define _DEBUG
 #ifdef _DEBUG
 	#include <time.h>
-	time_t starttime;
-	time_t endtime;
+	clock_t starttime;
+	clock_t endtime;
 #endif
 
 /**
@@ -232,8 +232,8 @@ void process_row(char *row) {
 			// compose file name and path
 			sprintf(file, "%s%03d/logs/ident/%s/%s.%s", rootdir, cluster, clientident, clientident, logname);
 		} else { // extract IP and host name from log line
-			// You must prefix the log format with "%h %V", for example:
-			// "%h %V %{X-Forwarded-For}i %l %u %t \"%r\" %>s %b \"%{Referer}i\" \"%{User-Agent}i\""
+			// You must prefix the log format with "%A %V", for example:
+			// "%A %V %{X-Forwarded-For}i %l %u %t \"%r\" %>s %b \"%{Referer}i\" \"%{User-Agent}i\""
 			// get the IP address
 			strcpy(clientip, strtok_r(logline, " ", &endstr));
 			// get the hostname
@@ -293,8 +293,8 @@ void *connection_thread(void *cargs) {
 	memset(lastrow, 0, BUFLEN);
 
 	#ifdef _DEBUG
-		starttime = time(NULL);
-		printf("  START TIME [sec]: %d\n", starttime);
+		starttime = clock();
+		printf("  START TIME [sec]: %.3f\n", (double)starttime / CLOCKS_PER_SEC);
 	#endif
 
 	// receive a message from ns and put data int buf (limited to BUFLEN characters)
@@ -348,9 +348,9 @@ void *connection_thread(void *cargs) {
 	} // end read TCP
 
 	#ifdef _DEBUG
-		endtime = time(NULL);
-		printf("    END TIME [sec]: %d\n", endtime);
-		printf("ELAPSED TIME [sec]: %d\n\n", (endtime - starttime));
+		endtime = clock();
+		printf("    END TIME [sec]: %.3f\n", (double)endtime / CLOCKS_PER_SEC);
+		printf("ELAPSED TIME [sec]: %.3f\n\n", (double)(endtime - starttime) / CLOCKS_PER_SEC);
 	#endif
 
 	// close connection

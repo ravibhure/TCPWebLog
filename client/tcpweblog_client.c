@@ -3,7 +3,7 @@
 // File name   : tcpweblog_client.c
 // Begin       : 2012-02-28
 // Last Update : 2012-08-09
-// Version     : 3.1.0
+// Version     : 3.2.0
 //
 // Website     : https://github.com/fubralimited/TCPWebLog
 //
@@ -58,13 +58,13 @@ USAGE EXAMPLES
 		ErrorLog \"| /usr/bin/tcpweblog_client.bin 10.0.3.15 9940 /var/log/tcpweblog_cache.log ssl.error.log 1 10.0.2.15 xhost\"
 
 	APACHE (general CustomLog)
-		# you must prefix the log format with \"%h %V\", for example:
-		LogFormat \"%h %V %{X-Forwarded-For}i %l %u %t \\\"%r\\\" %>s %b \\\"%{Referer}i\\\" \\\"%{User-Agent}i\\\"\" common
+		# you must prefix the log format with \"%A %V\", for example:
+		LogFormat \"%A %V %{X-Forwarded-For}i %l %u %t \\\"%r\\\" %>s %b \\\"%{Referer}i\\\" \\\"%{User-Agent}i\\\"\" common
 		CustomLog \"| /usr/bin/tcpweblog_client.bin 10.0.3.15 9940 /var/log/tcpweblog_cache.log access.log 1 - -\" common
 
 	VARNISHNCSA
-		You must prefix the log format with \"%h %V\", for example:
-		varnishncsa -F \"%h %V %{X-Forwarded-For}i %l %u %t \\\"%r\\\" %>s %b \\\"%{Referer}i\\\" \\\"%{User-Agent}i\\\"\" | /usr/bin/tcpweblog_client.bin 10.0.3.15 9940 /var/log/tcpweblog_cache.log varnish.log 1 - -
+		You must prefix the log format with \"%A %V\", for example:
+		varnishncsa -F \"%A %V %{X-Forwarded-For}i %l %u %t \\\"%r\\\" %>s %b \\\"%{Referer}i\\\" \\\"%{User-Agent}i\\\"\" | /usr/bin/tcpweblog_client.bin 10.0.3.15 9940 /var/log/tcpweblog_cache.log varnish.log 1 - -
 
 NOTES:
 	The maximum input line length is 65000 bytes.
@@ -143,11 +143,11 @@ EXAMPLES:\n\
 \t\tErrorLog \"| /usr/bin/tcpweblog_client.bin 10.0.3.15 9940 /var/log/tcpweblog_cache.log ssl.error.log 1 10.0.2.15 xhost\"\n\
 \n\
 \tAPACHE (general CustomLog)\n\
-\t\t# you must prefix the log format with \"%h %V\", for example:\n\
-\t\tLogFormat \"%h %V %{X-Forwarded-For}i %l %u %t \\\"%r\\\" %>s %b \\\"%{Referer}i\\\" \\\"%{User-Agent}i\\\"\" common\n\t\tCustomLog \"| /usr/bin/tcpweblog_client.bin 10.0.3.15 9940 /var/log/tcpweblog_cache.log access.log 1 - -\" common\n\
+\t\t# you must prefix the log format with \"%A %V\", for example:\n\
+\t\tLogFormat \"%A %V %{X-Forwarded-For}i %l %u %t \\\"%r\\\" %>s %b \\\"%{Referer}i\\\" \\\"%{User-Agent}i\\\"\" common\n\t\tCustomLog \"| /usr/bin/tcpweblog_client.bin 10.0.3.15 9940 /var/log/tcpweblog_cache.log access.log 1 - -\" common\n\
 \n\
 \tVARNISHNCSA\n\
-\t\tYou must prefix the log format with \"%h %V\", for example:\n\t\tvarnishncsa -F \"%h %V %{X-Forwarded-For}i %l %u %t \\\"%r\\\" %>s %b \\\"%{Referer}i\\\" \\\"%{User-Agent}i\\\"\" | /usr/bin/tcpweblog_client.bin 10.0.3.15 9940 /var/log/tcpweblog_cache.log varnish.log 1 - -\n\
+\t\tYou must prefix the log format with \"%A %V\", for example:\n\t\tvarnishncsa -F \"%A %V %{X-Forwarded-For}i %l %u %t \\\"%r\\\" %>s %b \\\"%{Referer}i\\\" \\\"%{User-Agent}i\\\"\" | /usr/bin/tcpweblog_client.bin 10.0.3.15 9940 /var/log/tcpweblog_cache.log varnish.log 1 - -\n\
 \n\
 \tIf using SELinux, run the following command to allow the Apache daemon to open network connections:\n\
 \t\tsetsebool -P httpd_can_network_connect=1");
