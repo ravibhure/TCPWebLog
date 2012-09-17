@@ -7,7 +7,7 @@
 # File name   : tcpweblog_server
 # Begin       : 2012-04-12
 # Last Update : 2012-08-21
-# Version     : 3.2.0
+# Version     : 3.2.1
 #
 # Description : Init script to execute TCPWebLog-Server.
 #
@@ -80,7 +80,7 @@ start() {
 	fi
 	echo -n $"Starting TCPWebLog-Server: "
 	#start the process
-	($CMD)&
+	daemon $CMD &
 	# create the lock file
 	touch /var/lock/subsys/tcpweblog_server
 	success $"TCPWebLog-Server startup"
