@@ -6,8 +6,8 @@
 #==============================================================================+
 # File name   : tcpweblog_server
 # Begin       : 2012-04-12
-# Last Update : 2012-08-21
-# Version     : 3.2.1
+# Last Update : 2012-09-18
+# Version     : 3.2.2
 #
 # Description : Init script to execute TCPWebLog-Server.
 #
@@ -55,6 +55,8 @@ fi
 
 # command
 CMD="$PATH_TCPRECEIVER $LOGSERVER_PORT $MAX_CONNECTIONS $ROOT_DIR"
+LOCKFILE=/var/lock/subsys/tcpweblog_server
+RETVAL=0
 
 # get SystemV Init function library.
 if [ -f /etc/init.d/functions ] ; then
@@ -67,7 +69,7 @@ fi
 
 # Start the service
 start() {
-	if test -f /var/lock/subsys/tcpweblog_server ; then
+	if test -f $LOCKFILE ; then
 		# check if the process is running
 		if [ ! -z "`ps ax | grep -v grep | grep $PATH_TCPRECEIVER`" ]; then
 			echo -n $"Service is Already Running."
@@ -75,16 +77,16 @@ start() {
 			return
 		else
 			# delete the orphan lock file
-			rm -f /var/lock/subsys/tcpweblog_server
+			rm -f $LOCKFILE
 		fi
 	fi
 	echo -n $"Starting TCPWebLog-Server: "
 	#start the process
-	daemon $CMD &
-	# create the lock file
-	touch /var/lock/subsys/tcpweblog_server
-	success $"TCPWebLog-Server startup"
+	$CMD
+	RETVAL=$?
+	[ $RETVAL = 0 ] && touch $LOCKFILE && success || failure
 	echo
+	return $RETVAL
 }
 
 # Restart the service
@@ -94,12 +96,13 @@ stop() {
 	if [ ! -z "`ps ax | grep -v grep | grep $PATH_TCPRECEIVER`" ]; then
 		# kill the process
 		killproc $PATH_TCPRECEIVER
+		RETVAL=$?
 	else
 		failure $"TCPWebLog-Server stop"
 	fi
-	# delete the lock file
-	rm -f /var/lock/subsys/tcpweblog_server
 	echo
+	rm -f $LOCKFILE
+	return $RETVAL
 }
 
 ### main logic ###
@@ -112,23 +115,24 @@ case "$1" in
 		;;
 	status)
 		status $PATH_TCPRECEIVER
+		RETVAL=$?
 		;;
 	restart|reload)
 		stop
 		start
 		;;
 	condrestart)
-		if test -f /var/lock/subsys/tcpweblog_server ; then
+		if test -f $LOCKFILE ; then
 			stop
 			start
 		fi
 		;;
 	*)
 		echo $"Usage: $0 {start|stop|status|restart|reload|condrestart}"
-		exit 1
+		RETVAL=2
+		[ "$1" = 'usage' ] && RETVAL=0
 esac
-
-exit 0
+exit $RETVAL
 
 #==============================================================================+
 # END OF FILE

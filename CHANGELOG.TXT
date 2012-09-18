@@ -1,3 +1,7 @@
+3.2.2 (2012-09-18)
+	- Server program is now properly daemonized.
+	- Init script was updated.
+
 3.2.1 (2012-09-17)
 	- Init scripts were improved.
 

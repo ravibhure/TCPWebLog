@@ -2,8 +2,8 @@
 //=============================================================================+
 // File name   : tcpweblog_server.c
 // Begin       : 2012-02-14
-// Last Update : 2012-08-09
-// Version     : 3.2.1
+// Last Update : 2012-09-18
+// Version     : 3.2.2
 //
 // Website     : https://github.com/fubralimited/TCPWebLog
 //
@@ -112,6 +112,43 @@ typedef struct _targs {
 void diep(const char *s) {
 	perror(s);
 	exit(1);
+}
+
+/**
+ * Daemonize this process.
+ */
+static void daemonize(void) {
+	pid_t pid, sid;
+	if (getppid() == 1) {
+		// this is already a daemon
+		return;
+	}
+	// fork off the parent process
+	pid = fork();
+	if (pid < 0) {
+		exit(1);
+	}
+	// if we got a good PID, then we can exit the parent process
+	if (pid > 0) {
+		exit(0);
+	}
+	// at this point we are executing as the child process
+	// change the file mode mask
+	umask(0);
+	// create a new SID for the child process
+	sid = setsid();
+	if (sid < 0) {
+		exit(1);
+	}
+	// change the current working directory to prevents the current directory from being locked
+	if ((chdir("/")) < 0) {
+		exit(1);
+	}
+	// redirect standard files to /dev/null
+	FILE *ignore;
+	ignore = freopen( "/dev/null", "r", stdin);
+	ignore = freopen( "/dev/null", "w", stdout);
+	ignore = freopen( "/dev/null", "w", stderr);
 }
 
 /**
@@ -385,6 +422,9 @@ FOR EXAMPLE:\n\
 
 	// root directory where to put log files
 	rootdir = (char *)argv[3];
+
+	// daemonize this program
+	daemonize();
 
 	// thread identifier
 	pthread_t tid;

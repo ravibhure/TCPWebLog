@@ -3,9 +3,9 @@ TCPWebLog - README
 
 + Name: TCPWebLog
 
-+ Version: 3.2.1
++ Version: 3.2.2
 
-+ Release date: 2012-08-29
++ Release date: 2012-09-18
 
 + Author: Nicola Asuni
 
@@ -132,7 +132,7 @@ INSTALL SERVERUSAGE SERVER:
 
 As root install the TCPWebLog-Server RPM file:
 
-	# rpm -i tcpweblog_server-3.2.1-1.el6.$(uname -m).rpm 
+	# rpm -i tcpweblog_server-3.2.2-1.el6.$(uname -m).rpm 
 	
 Configure the TCPWebLog-Server
 
@@ -151,7 +151,7 @@ INSTALL SERVERUSAGE CLIENT:
 
 As root install the SystemTap runtime and TCPWebLog-Client RPM files:
 
-	# rpm -i tcpweblog_client-3.2.1-1.el6.$(uname -m).rpm
+	# rpm -i tcpweblog_client-3.2.2-1.el6.$(uname -m).rpm
 	
 Configure the logs
 
