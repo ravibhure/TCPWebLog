@@ -3,9 +3,9 @@ TCPWebLog - README
 
 + Name: TCPWebLog
 
-+ Version: 3.2.2
++ Version: 3.2.3
 
-+ Release date: 2012-09-18
++ Release date: 2012-11-12
 
 + Author: Nicola Asuni
 
@@ -132,7 +132,7 @@ INSTALL SERVERUSAGE SERVER:
 
 As root install the TCPWebLog-Server RPM file:
 
-	# rpm -i tcpweblog_server-3.2.2-1.el6.$(uname -m).rpm 
+	# rpm -i tcpweblog_server-3.2.3-1.el6.$(uname -m).rpm 
 	
 Configure the TCPWebLog-Server
 
@@ -151,7 +151,7 @@ INSTALL SERVERUSAGE CLIENT:
 
 As root install the SystemTap runtime and TCPWebLog-Client RPM files:
 
-	# rpm -i tcpweblog_client-3.2.2-1.el6.$(uname -m).rpm
+	# rpm -i tcpweblog_client-3.2.3-1.el6.$(uname -m).rpm
 	
 Configure the logs
 
@@ -183,6 +183,17 @@ EXAMPLES:
 	VARNISHNCSA
 		You must prefix the log format with \"%A %V\", for example:
 		varnishncsa -F \"%A %V %{X-Forwarded-For}i %l %u %t \\\"%r\\\" %>s %b \\\"%{Referer}i\\\" \\\"%{User-Agent}i\\\"\" | /usr/bin/tcpweblog_client.bin 10.0.3.15 9940 /var/log/tcpweblog_cache.log varnish.log 1 - -
+
+	PURE-FTPD
+		- Create a named pipe:
+			mkfifo /var/log/pureftpd.log -Z system_u:object_r:var_log_t:s0
+		- Create a /root/ftplogpipe.sh file:
+			#!/bin/sh
+			(setsid bash -c '(cat /var/log/pureftpd.log | /usr/bin/tcpweblog_client.bin 10.0.3.15 9940 /var/log/tcpweblog_ftp_cache.log ftp.log 1 - -) & disown %%') </dev/null >&/dev/null &
+		- Add the following line to the end of /etc/rc.d/rc.local:
+			root/ftplogpipe.sh"
+		- Edit /etc/pure-ftpd/pure-ftpd.conf:
+			Altlog clf:/var/log/pureftpd.log
 
 	If using SELinux, run the following command to allow the Apache daemon to open network connections:
 		setsebool -P httpd_can_network_connect=1

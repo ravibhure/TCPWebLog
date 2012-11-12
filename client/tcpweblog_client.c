@@ -3,7 +3,7 @@
 // File name   : tcpweblog_client.c
 // Begin       : 2012-02-28
 // Last Update : 2012-08-09
-// Version     : 3.2.2
+// Version     : 3.2.3
 //
 // Website     : https://github.com/fubralimited/TCPWebLog
 //
@@ -19,7 +19,7 @@
 //               Aldershot
 //               Hampshire
 //               GU12 4RQ
-//				 UK
+// 							 UK
 //               http://www.fubra.com
 //               support@fubra.com
 //
@@ -65,6 +65,17 @@ USAGE EXAMPLES
 	VARNISHNCSA
 		You must prefix the log format with \"%A %V\", for example:
 		varnishncsa -F \"%A %V %{X-Forwarded-For}i %l %u %t \\\"%r\\\" %>s %b \\\"%{Referer}i\\\" \\\"%{User-Agent}i\\\"\" | /usr/bin/tcpweblog_client.bin 10.0.3.15 9940 /var/log/tcpweblog_cache.log varnish.log 1 - -
+
+	PURE-FTPD
+		- Create a named pipe:
+			mkfifo /var/log/pureftpd.log -Z system_u:object_r:var_log_t:s0
+		- Create a /root/ftplogpipe.sh file:
+			#!/bin/sh
+			(setsid bash -c '(cat /var/log/pureftpd.log | /usr/bin/tcpweblog_client.bin 10.0.3.15 9940 /var/log/tcpweblog_ftp_cache.log ftp.log 1 - -) & disown %%') </dev/null >&/dev/null &
+		- Add the following line to the end of /etc/rc.d/rc.local:
+			root/ftplogpipe.sh"
+		- Edit /etc/pure-ftpd/pure-ftpd.conf:
+			Altlog clf:/var/log/pureftpd.log
 
 NOTES:
 	The maximum input line length is 65000 bytes.

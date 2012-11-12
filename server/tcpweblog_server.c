@@ -2,8 +2,8 @@
 //=============================================================================+
 // File name   : tcpweblog_server.c
 // Begin       : 2012-02-14
-// Last Update : 2012-09-18
-// Version     : 3.2.2
+// Last Update : 2012-11-12
+// Version     : 3.2.3
 //
 // Website     : https://github.com/fubralimited/TCPWebLog
 //
@@ -20,7 +20,7 @@
 //               Aldershot
 //               Hampshire
 //               GU12 4RQ
-//				 UK
+//				       UK
 //               http://www.fubra.com
 //               support@fubra.com
 //
@@ -261,11 +261,17 @@ void process_row(char *row) {
 	if ((clientip == NULL) || (strlen(clientip) < 3)) {
 		// try to extract info from log line
 		if (strstr(logname, "ftp") != NULL) {
-			// special case for FTP
-			strtok_r(logline, " ", &endstr);
-			strtok_r(NULL, " ", &endstr);
+      // special case for FTP
+      // pure-ftpd clf format: 10.199.255.254 - 2x7eyq [12/Nov/2012:09:00:55 -0000] "PUT /cluster/001/vclusters/2x7eyq/sites/2x7eyq.alpha.dev2.lab/http/phpinfo.php" 200 17
+			strtok_r(logline, " ", &endstr); // skip IP
+			strtok_r(NULL, " ", &endstr); // skip host
 			// get the FTP username (ident)
 			strcpy(clientident, strtok_r(NULL, " ", &endstr));
+      // get original log line
+			strcpy(tmpline, strtok_r(NULL, "\n", &endstr));
+			// add newline char
+			strcat(tmpline, "\n");
+			strcpy(logline, tmpline);
 			// compose file name and path
 			sprintf(file, "%s%03d/logs/ident/%s/%s.%s", rootdir, cluster, clientident, clientident, logname);
 		} else { // extract IP and host name from log line

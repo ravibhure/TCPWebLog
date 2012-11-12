@@ -1,3 +1,6 @@
+3.2.3 (2012-11-12)
+	- FTP logging was fixed for pure-ftp clf format.
+
 3.2.2 (2012-09-18)
 	- Server program is now properly daemonized.
 	- Init script was updated.
