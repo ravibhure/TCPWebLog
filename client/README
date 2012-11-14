@@ -103,6 +103,16 @@ This folder contains the source code of TCPWebLog-Client:
 		You must prefix the log format with \"%A %V\", for example:
 		varnishncsa -F \"%A %V %{X-Forwarded-For}i %l %u %t \\\"%r\\\" %>s %b \\\"%{Referer}i\\\" \\\"%{User-Agent}i\\\"\" | /usr/bin/tcpweblog_client.bin 10.0.3.15 9940 /var/log/tcpweblog_cache.log varnish.log 1 - -
 
+	PURE-FTPD
+		- Create a named pipe:
+			mkfifo /var/log/pureftpd.log -Z system_u:object_r:var_log_t:s0
+		- Create a /root/ftplogpipe.sh file:
+			#!/bin/sh
+			(setsid bash -c '(while cat /var/log/pureftpd.log; do : Nothing; done | /usr/bin/tcpweblog_client.bin 10.0.3.15 9940 /var/log/tcpweblog_ftp_cache.log ftp.log 1 - -) & disown %%') </dev/null >&/dev/null &
+		- Add the following line to the end of /etc/rc.d/rc.local:
+			root/ftplogpipe.sh"
+		- Edit /etc/pure-ftpd/pure-ftpd.conf:
+			Altlog clf:/var/log/pureftpd.log
 
 
 REQUIRED PACKAGES TO COMPILE THE SOURCES:

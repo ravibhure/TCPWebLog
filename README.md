@@ -189,7 +189,7 @@ EXAMPLES:
 			mkfifo /var/log/pureftpd.log -Z system_u:object_r:var_log_t:s0
 		- Create a /root/ftplogpipe.sh file:
 			#!/bin/sh
-			(setsid bash -c '(cat /var/log/pureftpd.log | /usr/bin/tcpweblog_client.bin 10.0.3.15 9940 /var/log/tcpweblog_ftp_cache.log ftp.log 1 - -) & disown %%') </dev/null >&/dev/null &
+			(setsid bash -c '(while cat /var/log/pureftpd.log; do : Nothing; done | /usr/bin/tcpweblog_client.bin 10.0.3.15 9940 /var/log/tcpweblog_ftp_cache.log ftp.log 1 - -) & disown %%') </dev/null >&/dev/null &
 		- Add the following line to the end of /etc/rc.d/rc.local:
 			root/ftplogpipe.sh"
 		- Edit /etc/pure-ftpd/pure-ftpd.conf:
