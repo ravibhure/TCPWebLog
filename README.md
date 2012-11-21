@@ -184,7 +184,7 @@ EXAMPLES:
 		You must prefix the log format with \"%A %V\", for example:
 		varnishncsa -F \"%A %V %{X-Forwarded-For}i %l %u %t \\\"%r\\\" %>s %b \\\"%{Referer}i\\\" \\\"%{User-Agent}i\\\"\" | /usr/bin/tcpweblog_client.bin 10.0.3.15 9940 /var/log/tcpweblog_cache.log varnish.log 1 - -
 
-	PURE-FTPD
+	PURE-FTPD (I)
 		- Create a named pipe:
 			mkfifo /var/log/pureftpd.log -Z system_u:object_r:var_log_t:s0
 		- Create a /root/ftplogpipe.sh file:
@@ -195,6 +195,34 @@ EXAMPLES:
 		- Edit /etc/pure-ftpd/pure-ftpd.conf:
 			Altlog clf:/var/log/pureftpd.log
 
+	USING RSYSLOG AS A CLIENT FOR TCPWebLog-Server
+		- configure SELinux to permit rsyslog to use the TCP port 9940:
+				semanage port -a -t syslogd_port_t -p tcp 9940
+		-  create a /etc/rsyslog.d/ftp.conf
+				# read the input ftp log file
+				$InputFileName /var/log/pureftpd.log
+				$InputFileTag :ftplog: # mark rows with a custom tag
+				$InputFileStateFile stat-ftp
+				$InputFileSeverity notice
+				$InputFileFacility ftp
+				$InputRunFileMonitor
+				# define a message template compatible with TCPWebLog-Server
+				# @@logname<TAB>cluster<TAB>clientip<TAB>clienthost<TAB>rawbuf
+				$template tcpweblog_format,"@@ftp.log	1	-	-	%msg%\n"
+				# configure TCP connection and local cache
+				$WorkDirectory /var/lib/rsyslog # where to place spool files
+				$ActionQueueFileName FTPfwdRule # unique name prefix for spool files
+				$ActionQueueMaxDiskSpace 1g   # 1gb space limit (use as much as possible)
+				$ActionQueueSaveOnShutdown on # save messages to disk on shutdown
+				$ActionQueueType LinkedList   # run asynchronously
+				$ActionResumeRetryCount -1    # infinite retries if host is down
+				# send data to TCPWebLog-Server via TCP
+				:syslogtag, isequal, ":ftplog:" @@10.0.3.15:9940;tcpweblog_format
+		-  restart rsyslog and pure-ftpd:
+				service rsyslog restart
+				service pure-ftpd restart
+		
+		
 	If using SELinux, run the following command to allow the Apache daemon to open network connections:
 		setsebool -P httpd_can_network_connect=1
 
