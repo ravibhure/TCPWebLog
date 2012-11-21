@@ -77,10 +77,10 @@ USAGE EXAMPLES
 		- Edit /etc/pure-ftpd/pure-ftpd.conf:
 			Altlog clf:/var/log/pureftpd.log
 
-	USING RSYSLOG AS A CLIENT FOR TCPWebLog-Server
-		- configure SELinux to permit rsyslog to use the TCP port 9940:
-				semanage port -a -t syslogd_port_t -p tcp 9940
+	USING RSYSLOG AS A CLIENT FOR TCPWebLog-Server (example)
 		-  create a /etc/rsyslog.d/ftp.conf
+				# Rsyslog config file to forward pure-ftp logs to TCPWebLog-Server
+				$ModLoad imfile
 				# read the input ftp log file
 				$InputFileName /var/log/pureftpd.log
 				$InputFileTag :ftplog: # mark rows with a custom tag
