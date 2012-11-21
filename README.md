@@ -184,7 +184,7 @@ EXAMPLES:
 		You must prefix the log format with \"%A %V\", for example:
 		varnishncsa -F \"%A %V %{X-Forwarded-For}i %l %u %t \\\"%r\\\" %>s %b \\\"%{Referer}i\\\" \\\"%{User-Agent}i\\\"\" | /usr/bin/tcpweblog_client.bin 10.0.3.15 9940 /var/log/tcpweblog_cache.log varnish.log 1 - -
 
-	PURE-FTPD (I)
+	USING A NAMED PIPE TO FORWARD LOGS (pure-ftpd example)
 		- Create a named pipe:
 			mkfifo /var/log/pureftpd.log -Z system_u:object_r:var_log_t:s0
 		- Create a /root/ftplogpipe.sh file:
@@ -195,7 +195,7 @@ EXAMPLES:
 		- Edit /etc/pure-ftpd/pure-ftpd.conf:
 			Altlog clf:/var/log/pureftpd.log
 
-	USING RSYSLOG AS A CLIENT FOR TCPWebLog-Server (example)
+	USING RSYSLOG AS A CLIENT FOR TCPWebLog-Server (pure-ftpd example)
 		-  create a /etc/rsyslog.d/ftp.conf
 				# Rsyslog config file to forward pure-ftp logs to TCPWebLog-Server
 				$ModLoad imfile
