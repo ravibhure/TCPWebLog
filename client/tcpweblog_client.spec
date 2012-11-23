@@ -1,7 +1,7 @@
 %define release 1
 
 Name:           tcpweblog_client
-Version:        3.2.3
+Version:        3.2.4
 Release:        %{release}%{?dist}
 Summary:        TCPWebLog-Client program accepts a text input and sends each line to a remote server via TCP
 

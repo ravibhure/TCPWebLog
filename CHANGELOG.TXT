@@ -1,3 +1,6 @@
+3.2.4 (2012-11-22)
+	- Part of the FTP logging path was changed from logs/indent/ to logs/ftp.
+
 3.2.3 (2012-11-12)
 	- FTP logging was fixed for pure-ftp clf format.
 
